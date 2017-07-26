@@ -24,6 +24,8 @@ public class Main
             RDFFormat format = null;
             ClassBuilder cb = new ClassBuilder("/home/burgetr/git/timeline-analyzer/timeline-analyzer-core/ontology/ta.owl", format);
             
+            cb.setPackageName("com.test");
+            
             cb.generate("/tmp");
             
         } catch (Exception e) {

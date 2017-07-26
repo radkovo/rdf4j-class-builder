@@ -5,6 +5,7 @@
  */
 package com.github.radkovo.rdf4j.builder;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,10 +16,14 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.text.WordUtils;
 import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.util.GraphUtil;
 import org.eclipse.rdf4j.model.vocabulary.DC;
 import org.eclipse.rdf4j.model.vocabulary.DCTERMS;
 import org.eclipse.rdf4j.model.vocabulary.OWL;
@@ -42,6 +47,7 @@ public class ClassBuilder
 
     private static final IRI[] COMMENT_PROPERTIES = new IRI[]{RDFS.COMMENT, DCTERMS.DESCRIPTION, SKOS.DEFINITION, DC.DESCRIPTION};
     private static final IRI[] LABEL_PROPERTIES = new IRI[]{RDFS.LABEL, DCTERMS.TITLE, DC.TITLE, SKOS.PREF_LABEL, SKOS.ALT_LABEL};
+    private static final IRI[] SUBCLASS_PROPERTIES = new IRI[]{RDFS.SUBCLASSOF};
     private static final Set<IRI> classPredicates;
     static {
         classPredicates = new HashSet<>();
@@ -49,8 +55,6 @@ public class ClassBuilder
         classPredicates.add(OWL.CLASS);
     }
     
-    private String name = null;
-    private String prefix = null;
     private String packageName = null;
     private String indent = "\t";
     private String language = null;
@@ -76,33 +80,6 @@ public class ClassBuilder
             log.trace("Loading input file");
             model = Rio.parse(inputStream, "", format);
         }
-
-        //import
-        Set<Resource> owlOntologies = model.filter(null, RDF.TYPE, OWL.ONTOLOGY).subjects();
-        if (!owlOntologies.isEmpty()) {
-            setPrefix(owlOntologies.iterator().next().stringValue());
-        }
-        
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getPrefix()
-    {
-        return prefix;
-    }
-
-    public void setPrefix(String prefix)
-    {
-        this.prefix = prefix;
     }
 
     public String getPackageName()
@@ -149,13 +126,7 @@ public class ClassBuilder
             throw new FileNotFoundException(outputDir.toString());
         
         //find all classes in the model
-        Set<Resource> classes = new HashSet<>();
-        Model types = model.filter(null, RDF.TYPE, null);
-        for (Statement st : types)
-        {
-            if (classPredicates.contains(st.getObject()))
-                classes.add(st.getSubject());
-        }
+        Set<Resource> classes = findClasses();
         log.info("Found clases: {}", classes);
         
         //generate the classes
@@ -168,15 +139,103 @@ public class ClassBuilder
         }
         
     }
-    
-    public void generateClass(IRI cres, Path outputDir)
+
+    public void generateClass(IRI cres, Path outputDir) throws IOException
     {
-        
+        String className = getClassName(cres);
+        File outfile = new File(outputDir.toFile(), className + ".java");
+        PrintWriter out = new PrintWriter(outfile);
+        generateClass(cres, className, out);
+        out.close();
     }
     
-    public void generateClass(IRI cres, Path outputDir, PrintWriter out)
+    public void generateClass(IRI iri, String className, PrintWriter out)
     {
+        log.info("Generating {}", className);
         
+        //generate package
+        if (getPackageName() != null)
+            out.printf("package %s;\n\n", getPackageName());
+        
+        //get class properties
+        Literal oTitle = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), LABEL_PROPERTIES);
+        Literal oDescr = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), COMMENT_PROPERTIES);
+        Set<Value> oSeeAlso = model.filter(iri, RDFS.SEEALSO, null).objects();
+        
+        //class JavaDoc
+        out.println("/**");
+        if (oTitle != null) {
+            out.printf(" * %s.%n", WordUtils.wrap(oTitle.getLabel().replaceAll("\\s+", " "), 70, "\n * ", false));
+            out.println(" * <p>");
+        }
+        if (oDescr != null) {
+            out.printf(" * %s.%n", WordUtils.wrap(oDescr.getLabel().replaceAll("\\s+", " "), 70, "\n * ", false));
+            out.println(" * <p>");
+        }
+        out.printf(" * IRI: {@code <%s>}%n", iri);
+        if (!oSeeAlso.isEmpty()) {
+            out.println(" *");
+            for (Value s : oSeeAlso) {
+                if (s instanceof IRI) {
+                    out.printf(" * @see <a href=\"%s\">%s</a>%n", s.stringValue(), s.stringValue());
+                }
+            }
+        }
+        out.println(" */");
+        //class Definition
+        out.printf("public class %s {%n", className);
+        out.println();
+        out.println("}");
     }
     
+    //=======================================================================================================
+    
+    private Set<Resource> findClasses()
+    {
+        final Set<Resource> classes = new HashSet<>();
+        Model types = model.filter(null, RDF.TYPE, null);
+        for (Statement st : types)
+        {
+            if (classPredicates.contains(st.getObject()))
+                classes.add(st.getSubject());
+        }
+        return classes;
+    }
+    
+    private String getClassName(IRI iri)
+    {
+        return iri.getLocalName();
+    }
+    
+    private Literal getFirstExistingObjectLiteral(Model model, Resource subject, String lang, IRI... predicates)
+    {
+        for (IRI predicate : predicates)
+        {
+            Literal literal = getOptionalObjectLiteral(model, subject, predicate, lang);
+            if (literal != null) { return literal; }
+        }
+        return null;
+    }
+
+    private Literal getOptionalObjectLiteral(Model model, Resource subject, IRI predicate, String lang)
+    {
+        Set<Value> objects = GraphUtil.getObjects(model, subject, predicate);
+
+        Literal result = null;
+
+        for (Value nextValue : objects)
+        {
+            if (nextValue instanceof Literal)
+            {
+                final Literal literal = (Literal) nextValue;
+                if (result == null || (lang != null
+                        && lang.equals(literal.getLanguage().orElse(null))))
+                {
+                    result = literal;
+                }
+            }
+        }
+        return result;
+    }
+
 }
