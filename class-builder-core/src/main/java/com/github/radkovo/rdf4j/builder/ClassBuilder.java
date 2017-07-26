@@ -23,7 +23,6 @@ import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
-import org.eclipse.rdf4j.model.util.GraphUtil;
 import org.eclipse.rdf4j.model.vocabulary.DC;
 import org.eclipse.rdf4j.model.vocabulary.DCTERMS;
 import org.eclipse.rdf4j.model.vocabulary.OWL;
@@ -45,9 +44,9 @@ public class ClassBuilder
 {
     private static final Logger log = LoggerFactory.getLogger(ClassBuilder.class);
 
+    private static final String DEFAULT_SUPERCLASS = "com.github.radkovo.rdf4j.builder.RDFEntity";
     private static final IRI[] COMMENT_PROPERTIES = new IRI[]{RDFS.COMMENT, DCTERMS.DESCRIPTION, SKOS.DEFINITION, DC.DESCRIPTION};
     private static final IRI[] LABEL_PROPERTIES = new IRI[]{RDFS.LABEL, DCTERMS.TITLE, DC.TITLE, SKOS.PREF_LABEL, SKOS.ALT_LABEL};
-    private static final IRI[] SUBCLASS_PROPERTIES = new IRI[]{RDFS.SUBCLASSOF};
     private static final Set<IRI> classPredicates;
     static {
         classPredicates = new HashSet<>();
@@ -161,6 +160,15 @@ public class ClassBuilder
         Literal oTitle = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), LABEL_PROPERTIES);
         Literal oDescr = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), COMMENT_PROPERTIES);
         Set<Value> oSeeAlso = model.filter(iri, RDFS.SEEALSO, null).objects();
+        //super class
+        boolean derived = false;
+        String superClass = DEFAULT_SUPERCLASS;
+        IRI superClassIRI = getOptionalObjectIRI(model, iri, RDFS.SUBCLASSOF);
+        if (superClassIRI != null)
+        {
+            derived = true;
+            superClass = getClassName(superClassIRI);
+        }
         
         //class JavaDoc
         out.println("/**");
@@ -183,7 +191,7 @@ public class ClassBuilder
         }
         out.println(" */");
         //class Definition
-        out.printf("public class %s {%n", className);
+        out.printf("public class %s extends %s {%n", className, superClass);
         out.println();
         out.println("}");
     }
@@ -219,7 +227,7 @@ public class ClassBuilder
 
     private Literal getOptionalObjectLiteral(Model model, Resource subject, IRI predicate, String lang)
     {
-        Set<Value> objects = GraphUtil.getObjects(model, subject, predicate);
+        Set<Value> objects = model.filter(subject, predicate, null).objects();
 
         Literal result = null;
 
@@ -238,4 +246,15 @@ public class ClassBuilder
         return result;
     }
 
+    private IRI getOptionalObjectIRI(Model model, Resource subject, IRI predicate)
+    {
+        Set<Value> objects = model.filter(subject, predicate, null).objects();
+        for (Value nextValue : objects)
+        {
+            if (nextValue instanceof IRI)
+                return (IRI) nextValue;
+        }
+        return null;
+    }
+    
 }
