@@ -13,9 +13,12 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
@@ -29,6 +32,7 @@ import org.eclipse.rdf4j.model.vocabulary.OWL;
 import org.eclipse.rdf4j.model.vocabulary.RDF;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.model.vocabulary.SKOS;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.Rio;
@@ -47,11 +51,30 @@ public class ClassBuilder
     private static final String DEFAULT_SUPERCLASS = "com.github.radkovo.rdf4j.builder.RDFEntity";
     private static final IRI[] COMMENT_PROPERTIES = new IRI[]{RDFS.COMMENT, DCTERMS.DESCRIPTION, SKOS.DEFINITION, DC.DESCRIPTION};
     private static final IRI[] LABEL_PROPERTIES = new IRI[]{RDFS.LABEL, DCTERMS.TITLE, DC.TITLE, SKOS.PREF_LABEL, SKOS.ALT_LABEL};
+    private static final IRI[] PROPERTY_PROPERTIES = new IRI[]{RDF.PROPERTY, OWL.DATATYPEPROPERTY, OWL.OBJECTPROPERTY};
     private static final Set<IRI> classPredicates;
     static {
         classPredicates = new HashSet<>();
         classPredicates.add(RDFS.CLASS);
         classPredicates.add(OWL.CLASS);
+    }
+    private static final Map<IRI, String> dataTypes;
+    static {
+        dataTypes = new HashMap<>();
+        dataTypes.put(XMLSchema.BOOLEAN, "boolean");
+        dataTypes.put(XMLSchema.BYTE, "byte");
+        dataTypes.put(XMLSchema.DATE, "java.util.Date");
+        dataTypes.put(XMLSchema.DATETIME, "java.util.Date");
+        dataTypes.put(XMLSchema.DECIMAL, "float");
+        dataTypes.put(XMLSchema.DOUBLE, "double");
+        dataTypes.put(XMLSchema.FLOAT, "float");
+        dataTypes.put(XMLSchema.INT, "int");
+        dataTypes.put(XMLSchema.INTEGER, "int");
+        dataTypes.put(XMLSchema.LONG, "long");
+        dataTypes.put(XMLSchema.POSITIVE_INTEGER, "int");
+        dataTypes.put(XMLSchema.SHORT, "short");
+        dataTypes.put(XMLSchema.STRING, "String");
+        dataTypes.put(XMLSchema.TIME, "java.util.Date");
     }
     
     private String packageName = null;
@@ -155,11 +178,9 @@ public class ClassBuilder
         //generate package
         if (getPackageName() != null)
             out.printf("package %s;\n\n", getPackageName());
-        
-        //get class properties
-        Literal oTitle = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), LABEL_PROPERTIES);
-        Literal oDescr = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), COMMENT_PROPERTIES);
-        Set<Value> oSeeAlso = model.filter(iri, RDFS.SEEALSO, null).objects();
+
+        generateJavadoc(iri, out, 0);
+
         //super class
         boolean derived = false;
         String superClass = DEFAULT_SUPERCLASS;
@@ -169,32 +190,83 @@ public class ClassBuilder
             derived = true;
             superClass = getClassName(superClassIRI);
         }
+        //class definition
+        out.printf("public class %s extends %s\n", className, superClass);
+        out.println("{");
+        
+        //generate properties
+        Set<IRI> properties = findClassProperties(iri);
+        log.debug("   properties: {}", properties);
+        for (IRI piri : properties)
+            generatePropertyDeclaration(piri, getPropertyName(piri), out);
+        out.println();
+        for (IRI piri : properties)
+        {
+            generatePropertyGetter(piri, getPropertyName(piri), out);
+            out.println();
+            generatePropertySetter(piri, getPropertyName(piri), out);
+            out.println();
+        }
+        
+        //finish class definition
+        out.println("}");
+    }
+    
+    protected void generatePropertyDeclaration(IRI iri, String propertyName, PrintWriter out)
+    {
+        generateJavadoc(iri, out, 1);
+        String type = getPropertyDataType(iri);
+        out.printf(getIndent(1) + "private %s %s;\n", type, propertyName);
+    }
+
+    protected void generatePropertyGetter(IRI iri, String propertyName, PrintWriter out)
+    {
+        String name = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        String type = getPropertyDataType(iri);
+        out.printf(getIndent(1) + "public %s %s() {\n", type, name);
+        out.printf(getIndent(2) + "return %s;\n", propertyName);
+        out.println(getIndent(1) + "}");
+    }
+
+    protected void generatePropertySetter(IRI iri, String propertyName, PrintWriter out)
+    {
+        String name = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        String type = getPropertyDataType(iri);
+        out.printf(getIndent(1) + "public void %s(%s %s) {\n", name, type, propertyName);
+        out.printf(getIndent(2) + "this.%s = %s;\n", propertyName, propertyName);
+        out.println(getIndent(1) + "}");
+    }
+
+    protected void generateJavadoc(IRI iri, PrintWriter out, int indent)
+    {
+        //get class properties
+        Literal oTitle = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), LABEL_PROPERTIES);
+        Literal oDescr = getFirstExistingObjectLiteral(model, iri, getPreferredLanguage(), COMMENT_PROPERTIES);
+        Set<Value> oSeeAlso = model.filter(iri, RDFS.SEEALSO, null).objects();
         
         //class JavaDoc
-        out.println("/**");
+        String ii = getIndent(indent);
+        out.println(ii + "/**");
         if (oTitle != null) {
-            out.printf(" * %s.%n", WordUtils.wrap(oTitle.getLabel().replaceAll("\\s+", " "), 70, "\n * ", false));
-            out.println(" * <p>");
+            out.printf(ii + " * %s.%n", WordUtils.wrap(oTitle.getLabel().replaceAll("\\s+", " "), 70, "\n" + ii + " * ", false));
+            out.println(ii + " * <p>");
         }
         if (oDescr != null) {
-            out.printf(" * %s.%n", WordUtils.wrap(oDescr.getLabel().replaceAll("\\s+", " "), 70, "\n * ", false));
-            out.println(" * <p>");
+            out.printf(ii + " * %s.%n", WordUtils.wrap(oDescr.getLabel().replaceAll("\\s+", " "), 70, "\n" + ii + " * ", false));
+            out.println(ii + " * <p>");
         }
-        out.printf(" * IRI: {@code <%s>}%n", iri);
+        out.printf(ii + " * IRI: {@code <%s>}%n", iri);
         if (!oSeeAlso.isEmpty()) {
-            out.println(" *");
+            out.println(ii + " *");
             for (Value s : oSeeAlso) {
                 if (s instanceof IRI) {
-                    out.printf(" * @see <a href=\"%s\">%s</a>%n", s.stringValue(), s.stringValue());
+                    out.printf(ii + " * @see <a href=\"%s\">%s</a>%n", s.stringValue(), s.stringValue());
                 }
             }
         }
-        out.println(" */");
-        //class Definition
-        out.printf("public class %s extends %s {%n", className, superClass);
-        out.println();
-        out.println("}");
+        out.println(ii + " */");
     }
+    
     
     //=======================================================================================================
     
@@ -215,6 +287,44 @@ public class ClassBuilder
         return iri.getLocalName();
     }
     
+    private Set<IRI> findClassProperties(IRI classIRI)
+    {
+        final Set<IRI> ret = new HashSet<>();
+        for (IRI pred : PROPERTY_PROPERTIES)
+        {
+            for (Statement st : model.filter(null, RDF.TYPE, pred))
+            {
+                if (st.getSubject() instanceof IRI)
+                {
+                    IRI firi = (IRI) st.getSubject();
+                    Set<Value> domains = model.filter(firi, RDFS.DOMAIN, null).objects();
+                    if (domains.contains(classIRI))
+                        ret.add(firi);
+                }
+            }
+        }
+        return ret;
+    }
+    
+    private String getPropertyName(IRI iri)
+    {
+        return iri.getLocalName();
+    }
+    
+    private String getPropertyDataType(IRI iri)
+    {
+        IRI range = getOptionalObjectIRI(model, iri, RDFS.RANGE);
+        String type = "String";
+        if (range != null)
+        {
+            if (dataTypes.containsKey(range)) //known data types
+                type = dataTypes.get(range);
+            else if (range.getNamespace().equals(iri.getNamespace())) //local data types
+                type = range.getLocalName();
+        }
+        return type;
+    }
+
     private Literal getFirstExistingObjectLiteral(Model model, Resource subject, String lang, IRI... predicates)
     {
         for (IRI predicate : predicates)
@@ -257,4 +367,8 @@ public class ClassBuilder
         return null;
     }
     
+    private String getIndent(int level) 
+    {
+        return StringUtils.repeat(getIndent(), level);
+    }
 }
