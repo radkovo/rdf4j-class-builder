@@ -194,6 +194,9 @@ public class ClassBuilder
         out.printf("public class %s extends %s\n", className, superClass);
         out.println("{");
         
+        //namespace IRI
+        out.printf(getIndent(1) + "public static final IRI = vf.createIRI(\"%s\");\n\n", iri);
+        
         //generate properties
         Set<IRI> properties = findClassProperties(iri);
         log.debug("   properties: {}", properties);
