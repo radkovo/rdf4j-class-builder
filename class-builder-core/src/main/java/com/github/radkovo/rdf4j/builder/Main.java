@@ -5,7 +5,11 @@
  */
 package com.github.radkovo.rdf4j.builder;
 
+import java.nio.file.Paths;
+
 import org.eclipse.rdf4j.rio.RDFFormat;
+
+import com.github.tkurz.sesame.vocab.VocabBuilder;
 
 /**
  * 
@@ -21,12 +25,24 @@ public class Main
     {
         try
         {
-            RDFFormat format = null;
-            ClassBuilder cb = new ClassBuilder("/home/burgetr/git/timeline-analyzer/timeline-analyzer-core/ontology/ta.owl", format);
+            String filename = "/home/burgetr/git/timeline-analyzer/timeline-analyzer-core/ontology/ta.owl";
+            RDFFormat format = null; //auto
+            String vocabName = "TA";
+            String vocabDir = "/home/burgetr/git/timeline-analyzer/timeline-analyzer-core/src/main/java/cz/vutbr/fit/ta/ontology/vocabulary";
+            String vocabPackage = "cz.vutbr.fit.ta.ontology.vocabulary";
             
-            cb.setPackageName("com.test");
+            String classDir = "/home/burgetr/git/timeline-analyzer/timeline-analyzer-core/src/main/java/cz/vutbr/fit/ta/ontology";
+            String classPackage = "cz.vutbr.fit.ta.ontology";
             
-            cb.generate("/tmp");
+            //build vocabulary
+            VocabBuilder vb = new VocabBuilder(filename, format);
+            vb.setPackageName(vocabPackage);
+            vb.generate(Paths.get(vocabDir, vocabName + ".java"));
+            
+            //build classes
+            ClassBuilder cb = new ClassBuilder(filename, format);
+            cb.setPackageName(classPackage);
+            cb.generate(classDir);
             
         } catch (Exception e) {
             e.printStackTrace();

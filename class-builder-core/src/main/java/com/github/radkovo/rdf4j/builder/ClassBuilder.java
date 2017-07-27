@@ -78,6 +78,8 @@ public class ClassBuilder
     }
     
     private String packageName = null;
+    private String vocabPackageName = null;
+    private String vocabName = null;
     private String indent = "\t";
     private String language = null;
     private final Model model;
@@ -112,6 +114,26 @@ public class ClassBuilder
     public void setPackageName(String packageName)
     {
         this.packageName = packageName;
+    }
+
+    public String getVocabPackageName()
+    {
+        return vocabPackageName;
+    }
+
+    public void setVocabPackageName(String vocabPackageName)
+    {
+        this.vocabPackageName = vocabPackageName;
+    }
+
+    public String getVocabName()
+    {
+        return vocabName;
+    }
+
+    public void setVocabName(String vocabName)
+    {
+        this.vocabName = vocabName;
     }
 
     public String getIndent()
@@ -178,6 +200,13 @@ public class ClassBuilder
         //generate package
         if (getPackageName() != null)
             out.printf("package %s;\n\n", getPackageName());
+        
+        //imports
+        out.println("import org.eclipse.rdf4j.model.IRI;");
+        out.println("import org.eclipse.rdf4j.model.Model;");
+        if (getVocabPackageName() != null && getVocabName() != null)
+            out.printf("import %s.%s;", getVocabPackageName(), getVocabName());
+        out.println();
 
         generateJavadoc(iri, out, 0);
 
@@ -195,7 +224,7 @@ public class ClassBuilder
         out.println("{");
         
         //namespace IRI
-        out.printf(getIndent(1) + "public static final IRI = vf.createIRI(\"%s\");\n\n", iri);
+        out.printf(getIndent(1) + "public static final IRI CLASS_IRI = vf.createIRI(\"%s\");\n\n", iri);
         
         //generate properties
         Set<IRI> properties = findClassProperties(iri);
@@ -211,6 +240,9 @@ public class ClassBuilder
             out.println();
         }
         
+        //generate addToModel
+        generateAddToModel(out);
+        
         //finish class definition
         out.println("}");
     }
@@ -220,6 +252,7 @@ public class ClassBuilder
         generateJavadoc(iri, out, 1);
         String type = getPropertyDataType(iri);
         out.printf(getIndent(1) + "private %s %s;\n", type, propertyName);
+        out.println();
     }
 
     protected void generatePropertyGetter(IRI iri, String propertyName, PrintWriter out)
@@ -240,6 +273,14 @@ public class ClassBuilder
         out.println(getIndent(1) + "}");
     }
 
+    protected void generateAddToModel(PrintWriter out)
+    {
+        out.println(getIndent(1) + "@Override");
+        out.println(getIndent(1) + "public void addToModel(Model model) {");
+        //TODO
+        out.println(getIndent(1)+ "}");
+    }
+    
     protected void generateJavadoc(IRI iri, PrintWriter out, int indent)
     {
         //get class properties
