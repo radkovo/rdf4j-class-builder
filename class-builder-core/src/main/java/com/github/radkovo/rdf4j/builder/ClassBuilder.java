@@ -77,11 +77,14 @@ public class ClassBuilder
         dataTypes.put(XMLSchema.TIME, "java.util.Date");
     }
     
+    //generation parametres
     private String packageName = null;
     private String vocabPackageName = null;
     private String vocabName = null;
     private String indent = "\t";
     private String language = null;
+    
+    //ontology data
     private final Model model;
 
     
@@ -197,11 +200,26 @@ public class ClassBuilder
     {
         log.info("Generating {}", className);
         
+        //some statistics
+        Set<IRI> properties = findClassProperties(iri);
+        log.debug("   properties: {}", properties);
+        boolean somePropertiesFunctional = false;
+        for (IRI piri : properties)
+        {
+            if (isFunctionalProperty(piri))
+            {
+                somePropertiesFunctional = true;
+                break;
+            }
+        }
+        
         //generate package
         if (getPackageName() != null)
             out.printf("package %s;\n\n", getPackageName());
         
         //imports
+        if (somePropertiesFunctional)
+            out.println("import java.util.Set;");
         out.println("import org.eclipse.rdf4j.model.IRI;");
         out.println("import org.eclipse.rdf4j.model.Model;");
         if (getVocabPackageName() != null && getVocabName() != null)
@@ -227,8 +245,6 @@ public class ClassBuilder
         out.printf(getIndent(1) + "public static final IRI CLASS_IRI = vf.createIRI(\"%s\");\n\n", iri);
         
         //generate properties
-        Set<IRI> properties = findClassProperties(iri);
-        log.debug("   properties: {}", properties);
         for (IRI piri : properties)
             generatePropertyDeclaration(piri, getPropertyName(piri), out);
         out.println();
@@ -242,8 +258,11 @@ public class ClassBuilder
         {
             generatePropertyGetter(piri, getPropertyName(piri), out);
             out.println();
-            generatePropertySetter(piri, getPropertyName(piri), out);
-            out.println();
+            if (!isFunctionalProperty(piri)) //omit setters for functional properties
+            {
+                generatePropertySetter(piri, getPropertyName(piri), out);
+                out.println();
+            }
         }
         
         //generate addToModel
@@ -395,7 +414,9 @@ public class ClassBuilder
             }
             else if (range.getNamespace().equals(iri.getNamespace())) //local data types -- object properties
             {
-                type = range.getLocalName();
+                type = getClassName(range);
+                if (!isFunctionalProperty(iri))
+                    type = "Set<" + type + ">";
             }
         }
         return type;
