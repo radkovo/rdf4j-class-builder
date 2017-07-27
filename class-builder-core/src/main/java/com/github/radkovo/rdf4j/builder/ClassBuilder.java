@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -222,6 +223,7 @@ public class ClassBuilder
             out.println("import java.util.Set;");
         out.println("import org.eclipse.rdf4j.model.IRI;");
         out.println("import org.eclipse.rdf4j.model.Model;");
+        out.println("import org.eclipse.rdf4j.model.Statement;");
         if (getVocabPackageName() != null && getVocabName() != null)
             out.printf("import %s.%s;", getVocabPackageName(), getVocabName());
         out.println();
@@ -266,9 +268,9 @@ public class ClassBuilder
         }
         
         //generate addToModel
-        generateAddToModel(out);
+        generateAddToModel(properties, out);
         out.println();
-        generateLoadFromModel(out);
+        generateLoadFromModel(properties, out);
         
         //finish class definition
         out.println("}");
@@ -312,19 +314,61 @@ public class ClassBuilder
         out.println(getIndent(1)+ "}");
     }
     
-    protected void generateAddToModel(PrintWriter out)
+    protected void generateAddToModel(Collection<IRI> properties, PrintWriter out)
     {
         out.println(getIndent(1) + "@Override");
         out.println(getIndent(1) + "public void addToModel(Model model) {");
-        //TODO
+        
+        for (IRI piri : properties)
+        {
+            out.print(getIndent(2));
+            String name = getPropertyName(piri);
+            String type = getPropertyClassification(piri);
+            out.printf("add%s(model, %s.%s, %s);\n", type, getVocabName(), name, name);
+        }
+        
         out.println(getIndent(1)+ "}");
     }
     
-    protected void generateLoadFromModel(PrintWriter out)
+    protected void generateLoadFromModel(Collection<IRI> properties, PrintWriter out)
     {
         out.println(getIndent(1) + "@Override");
         out.println(getIndent(1) + "public void loadFromModel(Model model) {");
-        //TODO
+        
+        out.println(getIndent(2) + "final Model m = model.filter(getIRI(), null, null);");
+        
+        for (IRI piri : properties)
+        {
+            String name = getPropertyName(piri);
+            String type = getPropertyClassification(piri);
+            String dtype = getPropertyDataType(piri);
+            if (type.equals("Value") || type.equals("Array")) //values and arrays need type specification in name
+            {
+                dtype = dtype.replace("[]", "");
+                if (dtype.contains("."))
+                    dtype = dtype.substring(dtype.lastIndexOf('.') + 1);
+                dtype = dtype.substring(0, 1).toUpperCase() + dtype.substring(1);
+                out.printf(getIndent(2) + "%s = load%s%s(m, %s.%s);\n", name, dtype, type, getVocabName(), name);
+            }
+            else if (type.equals("Object"))
+            {
+                out.printf(getIndent(2) + "%s = new %s();\n", name, dtype);
+                out.printf(getIndent(2) + "loadObject(m, %s.%s, %s);\n", getVocabName(), name, name);
+            }
+            else if (type.equals("Collection"))
+            {
+                out.printf(getIndent(2) + "%s = new Hash%s();\n", name, dtype);
+                out.printf(getIndent(2) + "loadCollection(m, %s.%s, %s);\n", getVocabName(), name, name);
+            }
+            
+            /*if (type.equals("Collection") || type.equals("Array"))
+                out.printf("%s = load%s%s(m.filter);\n", name, dtype, type);
+            else if (type.equals("Object"))
+                out.printf("%s = load%s%s(st);\n", name, dtype, type);
+            else
+                out.printf("%s = load%s%s(st);\n", name, dtype, type);*/
+        }
+
         out.println(getIndent(1)+ "}");
     }
     
@@ -411,6 +455,8 @@ public class ClassBuilder
             if (dataTypes.containsKey(range)) //known data types
             {
                 type = dataTypes.get(range);
+                if (!isFunctionalProperty(iri))
+                    type = type + "[]";
             }
             else if (range.getNamespace().equals(iri.getNamespace())) //local data types -- object properties
             {
@@ -422,6 +468,28 @@ public class ClassBuilder
         return type;
     }
 
+    private String getPropertyClassification(IRI iri)
+    {
+        IRI range = getOptionalObjectIRI(model, iri, RDFS.RANGE);
+        String type = "Value";
+        if (range != null)
+        {
+            if (dataTypes.containsKey(range)) //known data types
+            {
+                type = "Value";
+                if (!isFunctionalProperty(iri))
+                    type = "Array";
+            }
+            else if (range.getNamespace().equals(iri.getNamespace())) //local data types -- object properties
+            {
+                type = "Object";
+                if (!isFunctionalProperty(iri))
+                    type = "Collection";
+            }
+        }
+        return type;
+    }
+    
     private boolean isFunctionalProperty(IRI iri)
     {
         Model m = model.filter(iri, RDF.TYPE, OWL.FUNCTIONALPROPERTY);

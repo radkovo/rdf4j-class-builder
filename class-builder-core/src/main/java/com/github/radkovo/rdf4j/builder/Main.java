@@ -42,6 +42,8 @@ public class Main
             //build classes
             ClassBuilder cb = new ClassBuilder(filename, format);
             cb.setPackageName(classPackage);
+            cb.setVocabPackageName(vocabPackage);
+            cb.setVocabName(vocabName);
             cb.generate(classDir);
             
         } catch (Exception e) {
