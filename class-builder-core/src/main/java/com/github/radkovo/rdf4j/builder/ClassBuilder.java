@@ -220,7 +220,7 @@ public class ClassBuilder
             superClass = getClassName(superClassIRI);
         }
         //class definition
-        out.printf("public class %s extends %s\n", className, superClass);
+        out.printf("abstract public class %s extends %s\n", className, superClass);
         out.println("{");
         
         //namespace IRI
@@ -232,6 +232,12 @@ public class ClassBuilder
         for (IRI piri : properties)
             generatePropertyDeclaration(piri, getPropertyName(piri), out);
         out.println();
+        
+        //constructors
+        generateConstructors(className, out);
+        out.println();
+        
+        //getters and setters
         for (IRI piri : properties)
         {
             generatePropertyGetter(piri, getPropertyName(piri), out);
@@ -242,6 +248,8 @@ public class ClassBuilder
         
         //generate addToModel
         generateAddToModel(out);
+        out.println();
+        generateLoadFromModel(out);
         
         //finish class definition
         out.println("}");
@@ -273,10 +281,30 @@ public class ClassBuilder
         out.println(getIndent(1) + "}");
     }
 
+    protected void generateConstructors(String className, PrintWriter out)
+    {
+        out.printf(getIndent(1) + "public %s(IRI iri) {\n", className);
+        out.println(getIndent(2)+ "super(iri);");
+        out.println(getIndent(1)+ "}");
+        out.println();
+        
+        out.printf(getIndent(1) + "public %s(Model model, IRI iri) {\n", className);
+        out.println(getIndent(2)+ "super(model, iri);");
+        out.println(getIndent(1)+ "}");
+    }
+    
     protected void generateAddToModel(PrintWriter out)
     {
         out.println(getIndent(1) + "@Override");
         out.println(getIndent(1) + "public void addToModel(Model model) {");
+        //TODO
+        out.println(getIndent(1)+ "}");
+    }
+    
+    protected void generateLoadFromModel(PrintWriter out)
+    {
+        out.println(getIndent(1) + "@Override");
+        out.println(getIndent(1) + "public void loadFromModel(Model model) {");
         //TODO
         out.println(getIndent(1)+ "}");
     }
@@ -362,13 +390,29 @@ public class ClassBuilder
         if (range != null)
         {
             if (dataTypes.containsKey(range)) //known data types
+            {
                 type = dataTypes.get(range);
-            else if (range.getNamespace().equals(iri.getNamespace())) //local data types
+            }
+            else if (range.getNamespace().equals(iri.getNamespace())) //local data types -- object properties
+            {
                 type = range.getLocalName();
+            }
         }
         return type;
     }
 
+    private boolean isFunctionalProperty(IRI iri)
+    {
+        Model m = model.filter(iri, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+        return m.size() != 0;
+    }
+    
+    private boolean isInverseFunctionalProperty(IRI iri)
+    {
+        Model m = model.filter(iri, RDF.TYPE, OWL.INVERSEFUNCTIONALPROPERTY);
+        return m.size() != 0;
+    }
+    
     private Literal getFirstExistingObjectLiteral(Model model, Resource subject, String lang, IRI... predicates)
     {
         for (IRI predicate : predicates)
