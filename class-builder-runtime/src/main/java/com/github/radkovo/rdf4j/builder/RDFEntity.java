@@ -5,6 +5,10 @@
  */
 package com.github.radkovo.rdf4j.builder;
 
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.ValueFactory;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+
 /**
  * A base class for all generated RDF entities.
  * 
@@ -12,5 +16,12 @@ package com.github.radkovo.rdf4j.builder;
  */
 abstract public class RDFEntity
 {
+    public static final ValueFactory vf = SimpleValueFactory.getInstance();
+    
+    abstract public void addToModel(Model model);
+    
+    //=====================================================================================
+    
+    
 
 }
