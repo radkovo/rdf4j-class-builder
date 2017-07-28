@@ -315,7 +315,7 @@ public class ClassBuilder
         {
             generatePropertyGetter(piri, getPropertyName(piri), out);
             out.println();
-            if (!isFunctionalProperty(piri)) //omit setters for functional properties
+            if (isFunctionalProperty(piri)) //omit setters for non-functional properties (collections)
             {
                 generatePropertySetter(piri, getPropertyName(piri), out);
                 out.println();
