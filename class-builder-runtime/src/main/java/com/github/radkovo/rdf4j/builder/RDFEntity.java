@@ -16,6 +16,7 @@ import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
+import org.eclipse.rdf4j.model.util.Models;
 
 /**
  * A base class for all generated RDF entities.
@@ -34,12 +35,6 @@ abstract public class RDFEntity
         this.iri = iri;
     }
     
-    public RDFEntity(Model model, IRI iri)
-    {
-        this.iri = iri;
-        loadFromModel(model);
-    }
-    
     public IRI getIRI()
     {
         return iri;
@@ -51,7 +46,7 @@ abstract public class RDFEntity
     
     abstract public void addToModel(Model model);
     
-    abstract public void loadFromModel(Model model);
+    abstract public void loadFromModel(Model model, EntityFactory factory);
     
     //=====================================================================================
     
@@ -228,24 +223,9 @@ abstract public class RDFEntity
         return vals.length == 0 ? null : vals[0];
     }
     
-    protected void loadCollection(Model m, IRI pred, Set<? extends RDFEntity> object)
+    protected Set<IRI> getObjectIRIs(Model m, IRI predicate)
     {
-        /*Model stm = m.filter(null, pred, null);
-        Set<T> ret = new HashSet<>();
-        int i = 0;
-        for (Statement st : stm)
-        {
-            final Value val = st.getObject();
-            if (val instanceof Literal)
-                ret[i] = ((Literal) val).calendarValue().toGregorianCalendar().getTime();
-        }
-        return ret;*/
-        //TODO
-    }
-    
-    protected void loadObject(Model m, IRI pred, RDFEntity object)
-    {
-        //TODO
+        return Models.objectIRIs(m.filter(null, predicate, null));
     }
 
 }

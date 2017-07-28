@@ -186,8 +186,58 @@ public class ClassBuilder
                 log.warn("Skipping resource {} -- not an IRI", cres);
         }
         
+        //generate factory
+        generateFactory(classes, outputDir);
     }
 
+    //=======================================================================================================
+    
+    public void generateFactory(Set<Resource> classes, Path outputDir) throws IOException
+    {
+        String fname = getFactoryName();
+        File outfile = new File(outputDir.toFile(), fname + ".java");
+        PrintWriter out = new PrintWriter(outfile);
+        generateFactory(classes, fname, out);
+        out.close();
+    }
+    
+    public void generateFactory(Set<Resource> classes, String fname, PrintWriter out)
+    {
+        log.info("Generating factory interface {}", fname);
+        
+        //generate package
+        if (getPackageName() != null)
+            out.printf("package %s;\n\n", getPackageName());
+        
+        //imports
+        out.println("import org.eclipse.rdf4j.model.IRI;");
+        out.println("import com.github.radkovo.rdf4j.builder.EntityFactory;");
+        out.println();
+        
+        //generate interface
+        out.printf("public interface %s extends EntityFactory{\n", fname);
+        
+        //declare 'create' methods
+        for (Resource cres : classes)
+        {
+            if (cres instanceof IRI)
+            {
+                String cname = getClassName((IRI) cres);
+                out.printf(getIndent(1) + "public %s create%s(IRI iri);\n", cname, cname);
+            }
+        }
+        
+        //end of interface
+        out.println("}");
+    }
+    
+    private String getFactoryName()
+    {
+        return getVocabName() + "Factory";
+    }
+    
+    //=======================================================================================================
+    
     public void generateClass(IRI cres, Path outputDir) throws IOException
     {
         String className = getClassName(cres);
@@ -204,14 +254,17 @@ public class ClassBuilder
         //some statistics
         Set<IRI> properties = findClassProperties(iri);
         log.debug("   properties: {}", properties);
-        boolean somePropertiesFunctional = false;
+        boolean somePropertiesNotFunctional = false;
+        boolean someCollections = false;
+        boolean someObjects = false;
         for (IRI piri : properties)
         {
-            if (isFunctionalProperty(piri))
-            {
-                somePropertiesFunctional = true;
-                break;
-            }
+            if (!isFunctionalProperty(piri))
+                somePropertiesNotFunctional = true;
+            if (getPropertyClassification(piri).equals("Object"))
+                someObjects = true;
+            if (getPropertyClassification(piri).equals("Collection"))
+                someCollections = true;
         }
         
         //generate package
@@ -219,11 +272,13 @@ public class ClassBuilder
             out.printf("package %s;\n\n", getPackageName());
         
         //imports
-        if (somePropertiesFunctional)
+        if (somePropertiesNotFunctional || someCollections)
             out.println("import java.util.Set;");
+        if (someCollections)
+            out.println("import java.util.HashSet;");
         out.println("import org.eclipse.rdf4j.model.IRI;");
         out.println("import org.eclipse.rdf4j.model.Model;");
-        out.println("import org.eclipse.rdf4j.model.Statement;");
+        out.println("import com.github.radkovo.rdf4j.builder.EntityFactory;");
         if (getVocabPackageName() != null && getVocabName() != null)
             out.printf("import %s.%s;", getVocabPackageName(), getVocabName());
         out.println();
@@ -270,7 +325,7 @@ public class ClassBuilder
         //generate addToModel
         generateAddToModel(properties, out);
         out.println();
-        generateLoadFromModel(properties, out);
+        generateLoadFromModel(properties, out, someCollections || someObjects);
         
         //finish class definition
         out.println("}");
@@ -307,11 +362,11 @@ public class ClassBuilder
         out.printf(getIndent(1) + "public %s(IRI iri) {\n", className);
         out.println(getIndent(2)+ "super(iri);");
         out.println(getIndent(1)+ "}");
-        out.println();
+        /*out.println();
         
         out.printf(getIndent(1) + "public %s(Model model, IRI iri) {\n", className);
         out.println(getIndent(2)+ "super(model, iri);");
-        out.println(getIndent(1)+ "}");
+        out.println(getIndent(1)+ "}");*/
     }
     
     protected void generateAddToModel(Collection<IRI> properties, PrintWriter out)
@@ -330,10 +385,17 @@ public class ClassBuilder
         out.println(getIndent(1)+ "}");
     }
     
-    protected void generateLoadFromModel(Collection<IRI> properties, PrintWriter out)
+    protected void generateLoadFromModel(Collection<IRI> properties, PrintWriter out, boolean useFactory)
     {
         out.println(getIndent(1) + "@Override");
-        out.println(getIndent(1) + "public void loadFromModel(Model model) {");
+        out.printf(getIndent(1) + "public void loadFromModel(Model model, EntityFactory efactory) {\n");
+
+        if (useFactory)
+        {
+            out.printf(getIndent(2) + "if (!(efactory instanceof %s))\n", getFactoryName());
+            out.printf(getIndent(3) + "throw new IllegalArgumentException(\"factory must be instance of %s\");\n", getFactoryName());
+            out.printf(getIndent(2) + "final %s factory = (%s) efactory;\n\n", getFactoryName(), getFactoryName());
+        }
         
         out.println(getIndent(2) + "final Model m = model.filter(getIRI(), null, null);");
         
@@ -352,21 +414,28 @@ public class ClassBuilder
             }
             else if (type.equals("Object"))
             {
-                out.printf(getIndent(2) + "%s = new %s();\n", name, dtype);
-                out.printf(getIndent(2) + "loadObject(m, %s.%s, %s);\n", getVocabName(), name, name);
+                out.printf(getIndent(2) + "//load object %s\n", name);
+                out.printf(getIndent(2) + "final Set<IRI> %sIRIs = getObjectIRIs(m, %s.%s);\n", name, getVocabName(), name);
+                out.printf(getIndent(2) + "if (!%sIRIs.isEmpty()) {\n", name);
+                out.printf(getIndent(3) +     "final IRI iri = %sIRIs.iterator().next();\n", name);
+                out.printf(getIndent(3) +     "%s = factory.create%s(iri);\n", name, dtype);
+                out.printf(getIndent(3) +     "%s.loadFromModel(m, factory);\n", name);
+                out.println(getIndent(2) + "} else {");
+                out.printf(getIndent(3) +     "%s = null;\n", name);
+                out.println(getIndent(2) + "}");
             }
             else if (type.equals("Collection"))
             {
-                out.printf(getIndent(2) + "%s = new Hash%s();\n", name, dtype);
-                out.printf(getIndent(2) + "loadCollection(m, %s.%s, %s);\n", getVocabName(), name, name);
+                dtype = dtype.replace("Set<", "").replace(">", "");
+                out.printf(getIndent(2) + "//load collection %s\n", name);
+                out.printf(getIndent(2) + "final Set<IRI> %sIRIs = getObjectIRIs(m, %s.%s);\n", name, getVocabName(), name);
+                out.printf(getIndent(2) + "%s = new HashSet<>();\n", name);
+                out.printf(getIndent(2) + "for (IRI iri : %sIRIs) {\n", name);
+                out.printf(getIndent(3) +     "%s item = factory.create%s(iri);\n", dtype, dtype);
+                out.printf(getIndent(3) +     "item.loadFromModel(m, factory);\n");
+                out.printf(getIndent(3) +     "%s.add(item);\n", name);
+                out.println(getIndent(2) + "}");
             }
-            
-            /*if (type.equals("Collection") || type.equals("Array"))
-                out.printf("%s = load%s%s(m.filter);\n", name, dtype, type);
-            else if (type.equals("Object"))
-                out.printf("%s = load%s%s(st);\n", name, dtype, type);
-            else
-                out.printf("%s = load%s%s(st);\n", name, dtype, type);*/
         }
 
         out.println(getIndent(1)+ "}");
