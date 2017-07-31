@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
+import org.atteo.evo.inflector.English;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
@@ -253,6 +254,7 @@ public class ClassBuilder
         
         //some statistics
         Set<IRI> properties = findClassProperties(iri);
+        Set<IRI> revProperties = findClassProperties(iri, RDFS.RANGE); //reverse properties
         log.debug("   properties: {}", properties);
         boolean somePropertiesNotFunctional = false;
         boolean someCollections = false;
@@ -264,6 +266,11 @@ public class ClassBuilder
             if (getPropertyClassification(piri).equals("Object"))
                 someObjects = true;
             if (getPropertyClassification(piri).equals("Collection"))
+                someCollections = true;
+        }
+        for (IRI piri : revProperties)
+        {
+            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
                 someCollections = true;
         }
         
@@ -304,6 +311,14 @@ public class ClassBuilder
         //generate properties
         for (IRI piri : properties)
             generatePropertyDeclaration(piri, getPropertyName(piri), out);
+        //reverse property declarations
+        for (IRI piri : revProperties)
+        {
+            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            {
+                generateReverseCollectionDeclaration(piri, getPropertyName(piri), getPropertySourceType(piri), out);
+            }
+        }
         out.println();
         
         //constructors
@@ -318,6 +333,16 @@ public class ClassBuilder
             if (isFunctionalProperty(piri)) //omit setters for non-functional properties (collections)
             {
                 generatePropertySetter(piri, getPropertyName(piri), out);
+                out.println();
+            }
+        }
+        
+        //adders for reverse 1:N properties
+        for (IRI piri : revProperties)
+        {
+            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            {
+                generateRevPropertyGetterAdder(piri, getPropertyName(piri), getPropertySourceType(piri), out);
                 out.println();
             }
         }
@@ -339,6 +364,14 @@ public class ClassBuilder
         out.println();
     }
 
+    protected void generateReverseCollectionDeclaration(IRI iri, String propertyName, String propertyType, PrintWriter out)
+    {
+        out.printf(getIndent(1) + "/** Inverse collection for %s.%s. */\n", propertyType, propertyName);
+        String varName = English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
+        out.printf(getIndent(1) + "private Set<%s> %s;\n", propertyType, varName);
+        out.println();
+    }
+    
     protected void generatePropertyGetter(IRI iri, String propertyName, PrintWriter out)
     {
         String name = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
@@ -354,6 +387,26 @@ public class ClassBuilder
         String type = getPropertyDataType(iri);
         out.printf(getIndent(1) + "public void %s(%s %s) {\n", name, type, propertyName);
         out.printf(getIndent(2) + "this.%s = %s;\n", propertyName, propertyName);
+        out.println(getIndent(1) + "}");
+    }
+
+    protected void generateRevPropertyGetterAdder(IRI iri, String propertyName, String propertyType, PrintWriter out)
+    {
+        String adderName = "add" + propertyType;
+        String paramName = propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1);
+        String otherSetter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        String varName = English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
+        String getterName = "get" + English.plural(propertyType);
+        
+        out.printf(getIndent(1) + "public Set<%s> %s() {\n", propertyType, getterName);
+        out.printf(getIndent(2) + "return (%s == null) ? java.util.Collections.emptySet() : %s;\n", varName, varName);
+        out.println(getIndent(1) + "}");
+        out.println();
+        
+        out.printf(getIndent(1) + "public void %s(%s %s) {\n", adderName, propertyType, paramName);
+        out.printf(getIndent(2) + "if (%s == null) %s = new HashSet<>();\n", varName, varName);
+        out.printf(getIndent(2) + "%s.add(%s);\n", varName, paramName);
+        out.printf(getIndent(2) + "%s.%s(this);\n", paramName, otherSetter);
         out.println(getIndent(1) + "}");
     }
 
@@ -493,6 +546,11 @@ public class ClassBuilder
     
     private Set<IRI> findClassProperties(IRI classIRI)
     {
+        return findClassProperties(classIRI, RDFS.DOMAIN);
+    }
+    
+    private Set<IRI> findClassProperties(IRI classIRI, IRI predicate)
+    {
         final Set<IRI> ret = new HashSet<>();
         for (IRI pred : PROPERTY_PROPERTIES)
         {
@@ -501,7 +559,7 @@ public class ClassBuilder
                 if (st.getSubject() instanceof IRI)
                 {
                     IRI firi = (IRI) st.getSubject();
-                    Set<Value> domains = model.filter(firi, RDFS.DOMAIN, null).objects();
+                    Set<Value> domains = model.filter(firi, predicate, null).objects();
                     if (domains.contains(classIRI))
                         ret.add(firi);
                 }
@@ -535,6 +593,12 @@ public class ClassBuilder
             }
         }
         return type;
+    }
+
+    private String getPropertySourceType(IRI iri)
+    {
+        IRI domain = getOptionalObjectIRI(model, iri, RDFS.DOMAIN);
+        return domain == null ? null : getClassName(domain);
     }
 
     private String getPropertyClassification(IRI iri)
