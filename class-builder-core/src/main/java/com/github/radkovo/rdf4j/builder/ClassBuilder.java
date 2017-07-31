@@ -323,7 +323,7 @@ public class ClassBuilder
         out.println();
         
         //constructors
-        generateConstructors(className, out);
+        generateConstructors(className, properties, out);
         out.println();
         
         //getters and setters
@@ -400,7 +400,7 @@ public class ClassBuilder
         String getterName = "get" + English.plural(propertyType);
         
         out.printf(getIndent(1) + "public Set<%s> %s() {\n", propertyType, getterName);
-        out.printf(getIndent(2) + "return (%s == null) ? java.util.Collections.emptySet() : %s;\n", varName, varName);
+        out.printf(getIndent(2) + "return (%s == null) ? new HashSet<>() : %s;\n", varName, varName);
         out.println(getIndent(1) + "}");
         out.println();
         
@@ -411,10 +411,19 @@ public class ClassBuilder
         out.println(getIndent(1) + "}");
     }
 
-    protected void generateConstructors(String className, PrintWriter out)
+    protected void generateConstructors(String className, Set<IRI> properties, PrintWriter out)
     {
         out.printf(getIndent(1) + "public %s(IRI iri) {\n", className);
         out.println(getIndent(2)+ "super(iri);");
+        for (IRI piri : properties)
+        {
+            if (getPropertyClassification(piri).equals("Collection"))
+            {
+                String propertyName = getPropertyName(piri);
+                String propertyType = getPropertyDataType(piri);
+                out.printf(getIndent(2) + "%s = new Hash%s();\n", propertyName, propertyType);
+            }
+        }
         out.println(getIndent(1)+ "}");
         /*out.println();
         
