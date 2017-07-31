@@ -77,6 +77,7 @@ public class ClassBuilder
         dataTypes.put(XMLSchema.SHORT, "short");
         dataTypes.put(XMLSchema.STRING, "String");
         dataTypes.put(XMLSchema.TIME, "java.util.Date");
+        dataTypes.put(XMLSchema.ANYURI, "java.net.URL");
     }
     
     //generation parametres

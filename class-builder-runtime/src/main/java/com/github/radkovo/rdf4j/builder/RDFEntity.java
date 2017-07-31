@@ -5,6 +5,8 @@
  */
 package com.github.radkovo.rdf4j.builder;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
@@ -17,6 +19,7 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 
 /**
  * A base class for all generated RDF entities.
@@ -75,6 +78,11 @@ abstract public class RDFEntity
         model.add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
+    protected void addValue(Model model, IRI propertyIRI, URL value)
+    {
+        model.add(getIRI(), propertyIRI, vf.createLiteral(value.toString()));
+    }
+
     protected void addArray(Model model, IRI propertyIRI, String[] values)
     {
         for (String value : values)
@@ -103,6 +111,12 @@ abstract public class RDFEntity
     {
         for (Date value : values)
             model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+    }
+
+    protected void addArray(Model model, IRI propertyIRI, URL[] values)
+    {
+        for (URL value : values)
+            model.add(getIRI(), propertyIRI, vf.createLiteral(value.toString(), XMLSchema.ANYURI));
     }
 
     protected void addObject(Model model, IRI propertyIRI, RDFEntity obj)
@@ -193,6 +207,28 @@ abstract public class RDFEntity
         return ret;
     }
 
+    protected URL[] loadURLArray(Model m, IRI pred)
+    {
+        Model stm = m.filter(null, pred, null);
+        URL[] ret = new URL[stm.size()];
+        int i = 0;
+        for (Statement st : stm)
+        {
+            final Value val = st.getObject();
+            if (val instanceof Literal)
+            {
+                try
+                {
+                    ret[i] = new URL(((Literal) val).stringValue());
+                } catch (MalformedURLException e) {
+                    //ignored
+                }
+            }
+            i++;
+        }
+        return ret;
+    }
+
     protected String loadStringValue(Model m, IRI pred)
     {
         String[] vals = loadStringArray(m, pred);
@@ -220,6 +256,12 @@ abstract public class RDFEntity
     protected Date loadDateValue(Model m, IRI pred)
     {
         Date[] vals = loadDateArray(m, pred);
+        return vals.length == 0 ? null : vals[0];
+    }
+    
+    protected URL loadURLValue(Model m, IRI pred)
+    {
+        URL[] vals = loadURLArray(m, pred);
         return vals.length == 0 ? null : vals[0];
     }
     
