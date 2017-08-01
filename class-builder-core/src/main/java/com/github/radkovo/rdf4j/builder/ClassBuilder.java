@@ -351,7 +351,7 @@ public class ClassBuilder
         }
         
         //generate addToModel
-        generateAddToModel(properties, out);
+        generateAddToModel(properties, revProperties, out);
         out.println();
         generateLoadFromModel(properties, out, someCollections || someObjects);
         
@@ -370,7 +370,7 @@ public class ClassBuilder
     protected void generateReverseCollectionDeclaration(IRI iri, String propertyName, String propertyType, PrintWriter out)
     {
         out.printf(getIndent(1) + "/** Inverse collection for %s.%s. */\n", propertyType, propertyName);
-        String varName = English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
+        String varName = getReversePropertyName(iri);
         out.printf(getIndent(1) + "private Set<%s> %s;\n", propertyType, varName);
         out.println();
     }
@@ -398,7 +398,7 @@ public class ClassBuilder
         String adderName = "add" + propertyType;
         String paramName = propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1);
         String otherSetter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-        String varName = English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
+        String varName = getReversePropertyName(iri);
         String getterName = "get" + English.plural(propertyType);
         
         out.printf(getIndent(1) + "public Set<%s> %s() {\n", propertyType, getterName);
@@ -442,7 +442,7 @@ public class ClassBuilder
         out.println(getIndent(1) + "}");
     }
     
-    protected void generateAddToModel(Collection<IRI> properties, PrintWriter out)
+    protected void generateAddToModel(Collection<IRI> properties, Collection<IRI> revProperties, PrintWriter out)
     {
         out.println(getIndent(1) + "@Override");
         out.println(getIndent(1) + "public void addToModel(Model model) {");
@@ -453,7 +453,21 @@ public class ClassBuilder
             out.print(getIndent(2));
             String name = getPropertyName(piri);
             String type = getPropertyClassification(piri);
-            out.printf("add%s(model, %s.%s, %s);\n", type, getVocabName(), name, name);
+            String mod = "";
+            if (type.equals("Collection") || type.equals("Object"))
+            {
+                if (isInverseFunctionalProperty(piri))
+                    mod = "WithData"; //add the data too unless there is a collection on the opposite side
+            }
+            out.printf("add%s%s(model, %s.%s, %s);\n", type, mod, getVocabName(), name, name);
+        }
+        for (IRI piri : revProperties)
+        {
+            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            {
+                String varName = getReversePropertyName(piri);
+                out.printf(getIndent(2) + "addCollectionData(model, %s);\n", varName);
+            }
         }
         
         out.println(getIndent(1)+ "}");
@@ -593,6 +607,12 @@ public class ClassBuilder
     private String getPropertyName(IRI iri)
     {
         return iri.getLocalName();
+    }
+    
+    private String getReversePropertyName(IRI iri)
+    {
+        final String propertyType = getPropertySourceType(iri);
+        return English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
     }
     
     private String getPropertyDataType(IRI iri)

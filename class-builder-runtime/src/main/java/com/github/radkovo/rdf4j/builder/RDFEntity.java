@@ -139,10 +139,28 @@ abstract public class RDFEntity
         model.add(getIRI(), propertyIRI, obj.getIRI());
     }
 
+    protected void addObjectWithData(Model model, IRI propertyIRI, RDFEntity obj)
+    {
+        addObject(model, propertyIRI, obj);
+        obj.addToModel(model);
+    }
+
     protected void addCollection(Model model, IRI propertyIRI, Collection<? extends RDFEntity> col)
     {
         for (RDFEntity entity : col)
             model.add(getIRI(), propertyIRI, entity.getIRI());
+    }
+
+    protected void addCollectionData(Model model, Collection<? extends RDFEntity> col)
+    {
+        for (RDFEntity entity : col)
+            entity.addToModel(model);
+    }
+    
+    protected void addCollectionWithData(Model model, IRI propertyIRI, Collection<? extends RDFEntity> col)
+    {
+        addCollection(model, propertyIRI, col);
+        addCollectionData(model, col);
     }
 
     //=====================================================================================
