@@ -303,7 +303,7 @@ public class ClassBuilder
             superClass = getClassName(superClassIRI);
         }
         //class definition
-        out.printf("abstract public class %s extends %s\n", className, superClass);
+        out.printf("public class %s extends %s\n", className, superClass);
         out.println("{");
         
         //namespace IRI
@@ -324,6 +324,8 @@ public class ClassBuilder
         
         //constructors
         generateConstructors(className, properties, out);
+        out.println();
+        generateDefaultMethods(className, out);
         out.println();
         
         //getters and setters
@@ -432,10 +434,19 @@ public class ClassBuilder
         out.println(getIndent(1)+ "}");*/
     }
     
+    protected void generateDefaultMethods(String className, PrintWriter out)
+    {
+        out.println(getIndent(1) + "@Override");
+        out.println(getIndent(1) + "public IRI getClassIRI() {");
+        out.printf(getIndent(2) + "return %s.CLASS_IRI;\n", className);
+        out.println(getIndent(1) + "}");
+    }
+    
     protected void generateAddToModel(Collection<IRI> properties, PrintWriter out)
     {
         out.println(getIndent(1) + "@Override");
         out.println(getIndent(1) + "public void addToModel(Model model) {");
+        out.println(getIndent(2) + "super.addToModel(model);");
         
         for (IRI piri : properties)
         {
@@ -452,6 +463,7 @@ public class ClassBuilder
     {
         out.println(getIndent(1) + "@Override");
         out.printf(getIndent(1) + "public void loadFromModel(Model model, EntityFactory efactory) {\n");
+        out.println(getIndent(2) + "super.loadFromModel(model, efactory);");
 
         if (useFactory)
         {

@@ -19,6 +19,8 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Models;
+import org.eclipse.rdf4j.model.vocabulary.RDF;
+import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 
 /**
@@ -45,11 +47,24 @@ abstract public class RDFEntity
     
     //=====================================================================================
 
-    abstract public IRI createIRI();
+    public void addToModel(Model model)
+    {
+        model.add(getIRI(), RDF.TYPE, getClassIRI());
+        if (getLabel() != null)
+            model.add(getIRI(), RDFS.LABEL, vf.createLiteral(getLabel()));
+    }
     
-    abstract public void addToModel(Model model);
+    public void loadFromModel(Model model, EntityFactory factory)
+    {
+        
+    }
     
-    abstract public void loadFromModel(Model model, EntityFactory factory);
+    public String getLabel()
+    {
+        return null;
+    }
+    
+    abstract public IRI getClassIRI();
     
     //=====================================================================================
     
