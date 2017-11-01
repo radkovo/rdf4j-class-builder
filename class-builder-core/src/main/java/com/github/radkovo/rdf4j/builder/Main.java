@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 
 import org.eclipse.rdf4j.rio.RDFFormat;
 
-import com.github.tkurz.sesame.vocab.VocabBuilder;
+import com.github.radkovo.rdf4j.vocab.VocabBuilder;
 
 /**
  * 
