@@ -280,7 +280,7 @@ public class ClassBuilder
             out.printf("package %s;\n\n", getPackageName());
         
         //imports
-        if (somePropertiesNotFunctional || someCollections)
+        if (somePropertiesNotFunctional || someCollections || someObjects)
             out.println("import java.util.Set;");
         if (someCollections)
             out.println("import java.util.HashSet;");
@@ -288,7 +288,7 @@ public class ClassBuilder
         out.println("import org.eclipse.rdf4j.model.Model;");
         out.println("import com.github.radkovo.rdf4j.builder.EntityFactory;");
         if (getVocabPackageName() != null && getVocabName() != null)
-            out.printf("import %s.%s;", getVocabPackageName(), getVocabName());
+            out.printf("import %s.%s;\n", getVocabPackageName(), getVocabName());
         out.println();
 
         generateJavadoc(iri, out, 0);
