@@ -271,7 +271,7 @@ public class ClassBuilder
         }
         for (IRI piri : revProperties)
         {
-            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
                 someCollections = true;
         }
         
@@ -315,7 +315,8 @@ public class ClassBuilder
         //reverse property declarations
         for (IRI piri : revProperties)
         {
-            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            log.debug("CLASS {} : {}", piri, getPropertyClassification(piri));
+            if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 generateReverseCollectionDeclaration(piri, getPropertyName(piri), getPropertySourceType(piri), out);
             }
@@ -343,7 +344,7 @@ public class ClassBuilder
         //adders for reverse 1:N properties
         for (IRI piri : revProperties)
         {
-            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 generateRevPropertyGetterAdder(piri, getPropertyName(piri), getPropertySourceType(piri), out);
                 out.println();
@@ -358,7 +359,7 @@ public class ClassBuilder
         //finish class definition
         out.println("}");
     }
-    
+
     protected void generatePropertyDeclaration(IRI iri, String propertyName, PrintWriter out)
     {
         generateJavadoc(iri, out, 1);
@@ -397,7 +398,6 @@ public class ClassBuilder
     {
         String adderName = "add" + propertyType;
         String paramName = propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1);
-        String otherSetter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         String varName = getReversePropertyName(iri);
         String getterName = "get" + English.plural(propertyType);
         
@@ -409,7 +409,16 @@ public class ClassBuilder
         out.printf(getIndent(1) + "public void %s(%s %s) {\n", adderName, propertyType, paramName);
         out.printf(getIndent(2) + "if (%s == null) %s = new HashSet<>();\n", varName, varName);
         out.printf(getIndent(2) + "%s.add(%s);\n", varName, paramName);
-        out.printf(getIndent(2) + "%s.%s(this);\n", paramName, otherSetter);
+        if (getPropertyClassification(iri).equals("Object"))
+        {
+            String otherSetter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+            out.printf(getIndent(2) + "%s.%s(this);\n", paramName, otherSetter);
+        }
+        else
+        {
+            String other = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+            out.printf(getIndent(2) + "%s.%s().add(this);\n", paramName, other);
+        }
         out.println(getIndent(1) + "}");
     }
 
@@ -463,7 +472,7 @@ public class ClassBuilder
         }
         for (IRI piri : revProperties)
         {
-            if (getPropertyClassification(piri).equals("Object") && !isInverseFunctionalProperty(piri))
+            if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 String varName = getReversePropertyName(piri);
                 out.printf(getIndent(2) + "addCollectionData(model, %s);\n", varName);
@@ -675,6 +684,12 @@ public class ClassBuilder
     {
         Model m = model.filter(iri, RDF.TYPE, OWL.INVERSEFUNCTIONALPROPERTY);
         return m.size() != 0;
+    }
+    
+    private boolean isObjectOrCollectionProperty(IRI piri)
+    {
+        return getPropertyClassification(piri).equals("Object")
+                ||  getPropertyClassification(piri).equals("Collection");
     }
     
     private Literal getFirstExistingObjectLiteral(Model model, Resource subject, String lang, IRI... predicates)
