@@ -287,6 +287,7 @@ public class ClassBuilder
         out.println("import org.eclipse.rdf4j.model.IRI;");
         out.println("import org.eclipse.rdf4j.model.Model;");
         out.println("import com.github.radkovo.rdf4j.builder.EntityFactory;");
+        out.println("import com.github.radkovo.rdf4j.builder.TargetModel;");
         if (getVocabPackageName() != null && getVocabName() != null)
             out.printf("import %s.%s;\n", getVocabPackageName(), getVocabName());
         out.println();
@@ -315,7 +316,7 @@ public class ClassBuilder
         //reverse property declarations
         for (IRI piri : revProperties)
         {
-            log.debug("CLASS {} : {}", piri, getPropertyClassification(piri));
+            //log.debug("CLASS {} : {}", piri, getPropertyClassification(piri));
             if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 generateReverseCollectionDeclaration(piri, getPropertyName(piri), getPropertySourceType(piri), out);
@@ -402,7 +403,8 @@ public class ClassBuilder
         String getterName = "get" + English.plural(propertyType);
         
         out.printf(getIndent(1) + "public Set<%s> %s() {\n", propertyType, getterName);
-        out.printf(getIndent(2) + "return (%s == null) ? new HashSet<>() : %s;\n", varName, varName);
+        //out.printf(getIndent(2) + "return (%s == null) ? new HashSet<>() : %s;\n", varName, varName);
+        out.printf(getIndent(2) + "return %s;\n", varName);
         out.println(getIndent(1) + "}");
         out.println();
         
@@ -439,7 +441,7 @@ public class ClassBuilder
         //reverse property initialization
         for (IRI piri : revProperties)
         {
-            if (getPropertyClassification(piri).equals("Collection") && !isInverseFunctionalProperty(piri))
+            if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 String propertyName = getReversePropertyName(piri);
                 out.printf(getIndent(2) + "%s = new HashSet<>();\n", propertyName);
@@ -465,28 +467,22 @@ public class ClassBuilder
     protected void generateAddToModel(Collection<IRI> properties, Collection<IRI> revProperties, PrintWriter out)
     {
         out.println(getIndent(1) + "@Override");
-        out.println(getIndent(1) + "public void addToModel(Model model) {");
-        out.println(getIndent(2) + "super.addToModel(model);");
+        out.println(getIndent(1) + "public void addToModel(TargetModel target) {");
+        out.println(getIndent(2) + "super.addToModel(target);");
         
         for (IRI piri : properties)
         {
             out.print(getIndent(2));
             String name = getPropertyName(piri);
             String type = getPropertyClassification(piri);
-            String mod = "";
-            if (type.equals("Collection") || type.equals("Object"))
-            {
-                if (isInverseFunctionalProperty(piri))
-                    mod = "WithData"; //add the data too unless there is a collection on the opposite side
-            }
-            out.printf("add%s%s(model, %s.%s, %s);\n", type, mod, getVocabName(), name, name);
+            out.printf("add%s(target, %s.%s, %s);\n", type, getVocabName(), name, name);
         }
         for (IRI piri : revProperties)
         {
             if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 String varName = getReversePropertyName(piri);
-                out.printf(getIndent(2) + "addCollectionData(model, %s);\n", varName);
+                out.printf(getIndent(2) + "target.addAll(%s);\n", varName);
             }
         }
         

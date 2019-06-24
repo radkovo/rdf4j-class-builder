@@ -47,11 +47,11 @@ abstract public class RDFEntity
     
     //=====================================================================================
 
-    public void addToModel(Model model)
+    public void addToModel(TargetModel target)
     {
-        model.add(getIRI(), RDF.TYPE, getClassIRI());
+        target.getModel().add(getIRI(), RDF.TYPE, getClassIRI());
         if (getLabel() != null)
-            model.add(getIRI(), RDFS.LABEL, vf.createLiteral(getLabel()));
+            target.getModel().add(getIRI(), RDFS.LABEL, vf.createLiteral(getLabel()));
     }
     
     public void loadFromModel(Model model, EntityFactory factory)
@@ -68,99 +68,86 @@ abstract public class RDFEntity
     
     //=====================================================================================
     
-    protected void addValue(Model model, IRI propertyIRI, String value)
+    protected void addValue(TargetModel target, IRI propertyIRI, String value)
     {
-        model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+        if (value != null)
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(Model model, IRI propertyIRI, int value)
+    protected void addValue(TargetModel target, IRI propertyIRI, int value)
     {
-        model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+        target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(Model model, IRI propertyIRI, float value)
+    protected void addValue(TargetModel target, IRI propertyIRI, float value)
     {
-        model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+        target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(Model model, IRI propertyIRI, double value)
+    protected void addValue(TargetModel target, IRI propertyIRI, double value)
     {
-        model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+        target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(Model model, IRI propertyIRI, Date value)
+    protected void addValue(TargetModel target, IRI propertyIRI, Date value)
     {
-        model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+        target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(Model model, IRI propertyIRI, URL value)
+    protected void addValue(TargetModel target, IRI propertyIRI, URL value)
     {
-        model.add(getIRI(), propertyIRI, vf.createLiteral(value.toString()));
+        target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value.toString()));
     }
 
-    protected void addArray(Model model, IRI propertyIRI, String[] values)
+    protected void addArray(TargetModel target, IRI propertyIRI, String[] values)
     {
         for (String value : values)
-            model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(Model model, IRI propertyIRI, int[] values)
+    protected void addArray(TargetModel target, IRI propertyIRI, int[] values)
     {
         for (int value : values)
-            model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(Model model, IRI propertyIRI, float[] values)
+    protected void addArray(TargetModel target, IRI propertyIRI, float[] values)
     {
         for (float value : values)
-            model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(Model model, IRI propertyIRI, double[] values)
+    protected void addArray(TargetModel target, IRI propertyIRI, double[] values)
     {
         for (double value : values)
-            model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(Model model, IRI propertyIRI, Date[] values)
+    protected void addArray(TargetModel target, IRI propertyIRI, Date[] values)
     {
         for (Date value : values)
-            model.add(getIRI(), propertyIRI, vf.createLiteral(value));
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(Model model, IRI propertyIRI, URL[] values)
+    protected void addArray(TargetModel target, IRI propertyIRI, URL[] values)
     {
         for (URL value : values)
-            model.add(getIRI(), propertyIRI, vf.createLiteral(value.toString(), XMLSchema.ANYURI));
+            target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value.toString(), XMLSchema.ANYURI));
     }
 
-    protected void addObject(Model model, IRI propertyIRI, RDFEntity obj)
+    protected void addObject(TargetModel target, IRI propertyIRI, RDFEntity obj)
     {
-        model.add(getIRI(), propertyIRI, obj.getIRI());
+        target.getModel().add(getIRI(), propertyIRI, obj.getIRI());
+        target.add(obj);
     }
 
-    protected void addObjectWithData(Model model, IRI propertyIRI, RDFEntity obj)
-    {
-        addObject(model, propertyIRI, obj);
-        obj.addToModel(model);
-    }
-
-    protected void addCollection(Model model, IRI propertyIRI, Collection<? extends RDFEntity> col)
+    protected void addCollection(TargetModel target, IRI propertyIRI, Collection<? extends RDFEntity> col)
     {
         for (RDFEntity entity : col)
-            model.add(getIRI(), propertyIRI, entity.getIRI());
-    }
-
-    protected void addCollectionData(Model model, Collection<? extends RDFEntity> col)
-    {
-        for (RDFEntity entity : col)
-            entity.addToModel(model);
-    }
-    
-    protected void addCollectionWithData(Model model, IRI propertyIRI, Collection<? extends RDFEntity> col)
-    {
-        addCollection(model, propertyIRI, col);
-        addCollectionData(model, col);
+        {
+            target.getModel().add(getIRI(), propertyIRI, entity.getIRI());
+            target.add(entity);
+        }
     }
 
     //=====================================================================================
