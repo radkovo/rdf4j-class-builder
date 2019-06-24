@@ -324,7 +324,7 @@ public class ClassBuilder
         out.println();
         
         //constructors
-        generateConstructors(className, properties, out);
+        generateConstructors(className, properties, revProperties, out);
         out.println();
         generateDefaultMethods(className, out);
         out.println();
@@ -422,10 +422,11 @@ public class ClassBuilder
         out.println(getIndent(1) + "}");
     }
 
-    protected void generateConstructors(String className, Set<IRI> properties, PrintWriter out)
+    protected void generateConstructors(String className, Set<IRI> properties, Set<IRI> revProperties, PrintWriter out)
     {
         out.printf(getIndent(1) + "public %s(IRI iri) {\n", className);
         out.println(getIndent(2)+ "super(iri);");
+        //Property initialization - create collections
         for (IRI piri : properties)
         {
             if (getPropertyClassification(piri).equals("Collection"))
@@ -435,6 +436,16 @@ public class ClassBuilder
                 out.printf(getIndent(2) + "%s = new Hash%s();\n", propertyName, propertyType);
             }
         }
+        //reverse property initialization
+        for (IRI piri : revProperties)
+        {
+            if (getPropertyClassification(piri).equals("Collection") && !isInverseFunctionalProperty(piri))
+            {
+                String propertyName = getReversePropertyName(piri);
+                out.printf(getIndent(2) + "%s = new HashSet<>();\n", propertyName);
+            }
+        }
+        
         out.println(getIndent(1)+ "}");
         /*out.println();
         
