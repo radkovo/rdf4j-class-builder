@@ -63,8 +63,8 @@ public class Main
             String vocabName = cli.getOptionValue('v');
             String vocabDir = cli.hasOption('o') ? cli.getOptionValue('o') : cwd;
             String vocabPackage = cli.hasOption('p') ? cli.getOptionValue('p') : "";
-            String classDir = cli.hasOption('O') ? cli.getOptionValue('O') : cwd;
-            String classPackage = cli.hasOption('P') ? cli.getOptionValue('P') : "";
+            String classDir = cli.hasOption('O') ? cli.getOptionValue('O') : vocabDir;
+            String classPackage = cli.hasOption('P') ? cli.getOptionValue('P') : vocabPackage;
             
             generateFromOWL(filename, format, vocabName, vocabDir, vocabPackage, classDir, classPackage);
             
