@@ -49,7 +49,7 @@ public class Main
             switch (cliArgs.length) 
             {
                 case 0:
-                    throw new ParseException("Missing input-file");
+                    throw new ParseException("Missing input file");
                 case 1:
                     filename = cliArgs[0];
                     break;
@@ -73,7 +73,7 @@ public class Main
         } catch (ParseException e) {
             printHelp(e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("I/O exception: " + e.getMessage());
         } catch (GenerationException e) {
             e.printStackTrace();
         }
@@ -111,7 +111,7 @@ public class Main
             hf.printWrapped(w, 80, error);
             w.println();
         }
-        hf.printWrapped(w, 80, 12, "Usage: Main [options...] <input-file>");
+        hf.printWrapped(w, 80, 12, "Usage: ClassBuilder [options...] <input-file>");
         hf.printWrapped(w, 80, 42, "  <input-file>                  the input file to read from");
         hf.printOptions(w, 80, getCliOpts(), 2, 2);
         w.flush();
