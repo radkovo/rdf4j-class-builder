@@ -15,7 +15,7 @@ The project is inspired by and integrates with the the [RDF4J Vocabulary Builder
 RDF4J Class Builder is distributed as platform-independent runnable jar archive:
 
 - Download the runnable archive `ClassBuilder.jar` from [Releases](https://github.com/radkovo/rdf4j-class-builder/releases)
-- Run the following command in the command prompt (depending on your operating system):\\
+- Run the following command in the command prompt (depending on your operating system):\
   `java -jar ClassBuilder.jar`
 
 You should see a list of available parametres.
