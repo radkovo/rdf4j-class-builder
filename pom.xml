@@ -8,11 +8,35 @@
 	<packaging>pom</packaging>
 
 	<name>RDF4J Class Builder</name>
+	<description>Java class generator from OWL ontologies</description>
 	<url>https://github.com/radkovo/rdf4j-class-builder</url>
 
+	<licenses>
+		<license>
+			<name>GNU Lesser General Public License 3.0</name>
+			<url>http://www.gnu.org/licenses/lgpl-3.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+    
+    <developers>
+        <developer>
+            <id>radkovo</id>
+            <name>Radek Burget</name>
+            <email>burgetr@fit.vutbr.cz</email>
+        </developer>
+    </developers>
+    
+    <scm>
+        <url>https://github.com/radkovo/rdf4j-class-builder.git</url>
+        <connection>scm:git:git@github.com:radkovo/rdf4j-class-builder.git</connection>
+        <developerConnection>scm:git:git@github.com:radkovo/rdf4j-class-builder.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+    
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <rdf4j.version>2.5.2</rdf4j.version>
+        <rdf4j.version>2.5.5</rdf4j.version>
         <slf4j.version>1.7.25</slf4j.version>
 	</properties>
 
@@ -27,14 +51,36 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.5.3</version>
+				<configuration>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<useReleaseProfile>false</useReleaseProfile>
+					<releaseProfiles>release</releaseProfiles>
+					<goals>deploy</goals>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.8</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
 	<modules>
 		<module>class-builder-core</module>
 		<module>class-builder-runtime</module>
-    <module>class-builder-cli</module>
-  </modules>
+		<module>class-builder-cli</module>
+	</modules>
 	
 	<dependencies>
 		<dependency>
@@ -124,5 +170,61 @@
         </dependencies>
     </dependencyManagement>
 
+	<profiles>
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.10.4</version>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 	
 </project>
