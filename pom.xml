@@ -4,7 +4,7 @@
 
     <groupId>io.github.radkovo</groupId>
     <artifactId>class-builder</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 	<packaging>pom</packaging>
 
 	<name>RDF4J Class Builder</name>
@@ -31,7 +31,7 @@
         <url>https://github.com/radkovo/rdf4j-class-builder.git</url>
         <connection>scm:git:git@github.com:radkovo/rdf4j-class-builder.git</connection>
         <developerConnection>scm:git:git@github.com:radkovo/rdf4j-class-builder.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>class-builder-1.0</tag>
     </scm>
     
 	<properties>
