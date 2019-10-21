@@ -4,7 +4,7 @@
 	<parent>
     	<groupId>io.github.radkovo</groupId>
     	<artifactId>class-builder</artifactId>
-		<version>1.0</version>
+		<version>1.1-SNAPSHOT</version>
 	</parent>
 
    	<artifactId>class-builder-cli</artifactId>
@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>io.github.radkovo</groupId>
 			<artifactId>class-builder-core</artifactId>
-			<version>1.0</version>
+			<version>1.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
