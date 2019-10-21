@@ -3,7 +3,7 @@
  *
  * Created on 26. 7. 2017, 13:43:26 by burgetr
  */
-package com.github.radkovo.rdf4j.builder;
+package io.github.radkovo.rdf4j.builder;
 
 import java.net.MalformedURLException;
 import java.net.URL;

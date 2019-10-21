@@ -3,7 +3,7 @@
  *
  * Created on 24. 6. 2019, 11:10:33 by burgetr
  */
-package com.github.radkovo.rdf4j.builder;
+package io.github.radkovo.rdf4j.builder;
 
 import java.util.Collection;
 import java.util.HashSet;

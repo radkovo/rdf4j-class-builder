@@ -3,7 +3,7 @@
  *
  * Created on 26. 7. 2017, 13:44:33 by burgetr
  */
-package com.github.radkovo.rdf4j.builder;
+package io.github.radkovo.rdf4j.builder;
 
 import java.io.File;
 import java.io.FileNotFoundException;
