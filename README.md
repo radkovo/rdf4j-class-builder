@@ -45,6 +45,18 @@ ClassBuilder [options...] <input-file>
                                 vocabulary package if absent)
 ```
 
+Example usage:
+
+```shell
+java -jar ClassBuilder.jar \
+	info.owl \
+	-v INFO \
+	-o src/com/example/vocabulary \
+	-p com.example.vocabulary \
+	-O src/com/example/ontology \
+	-P com.example.ontology \
+```
+
 ## Building
 
 RDF4J Class Builder may be build from the sources by maven. After cloning the source repository, use `mvn package` for building and packaging all the components.
