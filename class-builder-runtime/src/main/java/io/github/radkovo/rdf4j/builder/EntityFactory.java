@@ -6,6 +6,7 @@
 package io.github.radkovo.rdf4j.builder;
 
 /**
+ * A common base class for all the generated entity factories.
  * 
  * @author burgetr
  */

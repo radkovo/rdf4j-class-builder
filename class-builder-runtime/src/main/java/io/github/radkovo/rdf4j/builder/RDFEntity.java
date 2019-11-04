@@ -24,7 +24,9 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.model.vocabulary.XMLSchema;
 
 /**
- * A base class for all generated RDF entities.
+ * A base class for all the generated RDF entities. It implements basic operations for
+ * adding and retrieving the entities to/from a RDF graph represented by
+ * a {@link TargetModel} instance.
  * 
  * @author burgetr
  */
@@ -35,11 +37,19 @@ abstract public class RDFEntity
     private IRI iri;
 
     
+    /**
+     * Creates a new entity identified with an IRI.
+     * @param iri The entity IRI.
+     */
     public RDFEntity(IRI iri)
     {
         this.iri = iri;
     }
     
+    /**
+     * Gets the entity IRI.
+     * @return The entity IRI
+     */
     public IRI getIRI()
     {
         return iri;
@@ -47,23 +57,44 @@ abstract public class RDFEntity
     
     //=====================================================================================
 
+    /**
+     * Creates a set of RDF triples describing the entity and stores the triples to a target model.
+     * @param target The target model
+     */
     public void addToModel(TargetModel target)
     {
+        // rdf:type
         target.getModel().add(getIRI(), RDF.TYPE, getClassIRI());
+        // rdfs:label
         if (getLabel() != null)
             target.getModel().add(getIRI(), RDFS.LABEL, vf.createLiteral(getLabel()));
+        // additional triples are added in generated subclasses
     }
     
+    /**
+     * Loads the entity properties from a RDF4J model. For creating the referenced entities
+     * a given factory is used.
+     * @param model The source model to load the properties from
+     * @param factory An entity factory for creating referenced entities while loading
+     */
     public void loadFromModel(Model model, EntityFactory factory)
     {
-        
+        // retrieval is implemented in generated subclasses
     }
     
+    /**
+     * Gets the entity label (rdfs:label) if defined in the RDF model.
+     * @return The label or {@code null} when no label is defined.
+     */
     public String getLabel()
     {
         return null;
     }
     
+    /**
+     * Gets the IRI of the entity class.
+     * @return The class IRI.
+     */
     abstract public IRI getClassIRI();
     
     //=====================================================================================
