@@ -24,14 +24,18 @@ import io.github.radkovo.rdf4j.builder.ClassBuilder;
 import io.github.radkovo.rdf4j.vocab.GenerationException;
 import io.github.radkovo.rdf4j.vocab.VocabBuilder;
 
+
 /**
- *
+ * The command line interface class.
+ * 
  * @author burgetr
  */
 public class Main
 {
     
     /**
+     * Command line processing method.
+     * 
      * @param args
      */
     public static void main(String[] args)

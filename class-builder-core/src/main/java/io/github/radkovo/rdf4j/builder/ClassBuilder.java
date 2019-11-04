@@ -42,7 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The main class builder.
+ * The main class builder. It reads an OWL definition in any supported format and generates a set of Java
+ * files based on the generation parametres.
  * 
  * @author burgetr
  */
