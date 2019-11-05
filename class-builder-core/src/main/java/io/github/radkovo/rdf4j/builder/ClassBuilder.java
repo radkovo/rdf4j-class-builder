@@ -92,11 +92,27 @@ public class ClassBuilder
     private final Model model;
 
     
+    /**
+     * Creates a new class builder for the specified input file.
+     * 
+     * @param filename input file specification
+     * @param format input file MIME type (such as application/rdf+xml) or {@code null} for automatic detection.
+     * @throws IOException
+     * @throws RDFParseException
+     */
     public ClassBuilder(String filename, String format) throws IOException, RDFParseException
     {
         this(filename, format != null ? Rio.getParserFormatForMIMEType(format).orElse(null) : null);
     }
     
+    /**
+     * Creates a new class builder for the specified input file.
+     * 
+     * @param filename input file specification
+     * @param format input file format (see the {@link RDFFormat} constants) or {@code null} for automatic detection.
+     * @throws IOException
+     * @throws RDFParseException
+     */
     public ClassBuilder(String filename, RDFFormat format) throws IOException, RDFParseException
     {
         Path file = Paths.get(filename);
@@ -113,51 +129,91 @@ public class ClassBuilder
         }
     }
 
+    /**
+     * Returns the target Java package name for generated classes.
+     * @return The target package name or {@code null} when not specified.
+     */
     public String getPackageName()
     {
         return packageName;
     }
 
+    /**
+     * Sets the target Java package name for generated classes.
+     * @param packageName the package name
+     */
     public void setPackageName(String packageName)
     {
         this.packageName = packageName;
     }
 
+    /**
+     * Returns the target Java package name for generated vocabularies.
+     * @return The target package name or {@code null} when not specified.
+     */
     public String getVocabPackageName()
     {
         return vocabPackageName;
     }
 
+    /**
+     * Sets the target Java package name for generated vocabularies.
+     * @param packageName the package name
+     */
     public void setVocabPackageName(String vocabPackageName)
     {
         this.vocabPackageName = vocabPackageName;
     }
 
+    /**
+     * Gets the name of the generated vocabulary class.
+     * @return The vocabulary class name (without the package).
+     */
     public String getVocabName()
     {
         return vocabName;
     }
 
+    /**
+     * Sets the name of the generated vocabulary class.
+     * @param vocabName the vocabulary class name (without the package).
+     */
     public void setVocabName(String vocabName)
     {
         this.vocabName = vocabName;
     }
 
+    /**
+     * Gets the used indentation string.
+     * @return the indentation string
+     */
     public String getIndent()
     {
         return indent;
     }
 
+    /**
+     * Sets the character sequence used for indentation. Default is '\t'.
+     * @param indent the indentation string
+     */
     public void setIndent(String indent)
     {
         this.indent = indent;
     }
 
+    /**
+     * Gets the preferred language for RDF literals.
+     * @return the RDF literals language or {@code null} when not set.
+     */
     public String getPreferredLanguage()
     {
         return language;
     }
 
+    /**
+     * Sets the preferred language for RDF literals.
+     * @param language the RDF literals language
+     */
     public void setPreferredLanguage(String language)
     {
         this.language = language;
@@ -165,12 +221,24 @@ public class ClassBuilder
     
     //=======================================================================================================
     
+    /**
+     * Generates all the classes and stores them to the given output directory.
+     * 
+     * @param outputDirName the output directory path
+     * @throws IOException
+     */
     public void generate(String outputDirName) throws IOException
     {
         Path outputDir = Paths.get(outputDirName);
         generate(outputDir);
     }
     
+    /**
+     * Generates all the classes and stores them to the given output directory.
+     * 
+     * @param outputDir the output directory path
+     * @throws IOException
+     */
     public void generate(Path outputDir) throws IOException
     {
         if (!Files.isDirectory(outputDir))
@@ -195,6 +263,13 @@ public class ClassBuilder
 
     //=======================================================================================================
     
+    /**
+     * Generates the factory interface.
+     * 
+     * @param classes
+     * @param outputDir
+     * @throws IOException
+     */
     public void generateFactory(Set<Resource> classes, Path outputDir) throws IOException
     {
         String fname = getFactoryName();
@@ -204,6 +279,13 @@ public class ClassBuilder
         out.close();
     }
     
+    /**
+     * Generates the factory interface.
+     * 
+     * @param classes
+     * @param fname
+     * @param out
+     */
     public void generateFactory(Set<Resource> classes, String fname, PrintWriter out)
     {
         log.info("Generating factory interface {}", fname);
@@ -241,6 +323,13 @@ public class ClassBuilder
     
     //=======================================================================================================
     
+    /**
+     * Generates a single class.
+     * 
+     * @param cres class resource
+     * @param outputDir output directory path
+     * @throws IOException
+     */
     public void generateClass(IRI cres, Path outputDir) throws IOException
     {
         String className = getClassName(cres);
@@ -250,6 +339,13 @@ public class ClassBuilder
         out.close();
     }
     
+    /**
+     * Generates a single class.
+     * 
+     * @param iri class IRI
+     * @param className class name
+     * @param out writer used for output
+     */
     public void generateClass(IRI iri, String className, PrintWriter out)
     {
         log.info("Generating {}", className);
