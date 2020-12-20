@@ -58,6 +58,7 @@ public abstract class ClassBuilder
     //generation settings
     private String indent = "\t";
     private String language = null;
+    private String vocabName = null;
 
     //ontology data
     private final Model model;
@@ -141,12 +142,58 @@ public abstract class ClassBuilder
     }
 
     /**
+     * Gets the name of the generated vocabulary class.
+     * @return The vocabulary class name (without the package).
+     */
+    public String getVocabName()
+    {
+        return vocabName;
+    }
+
+    /**
+     * Sets the name of the generated vocabulary class.
+     * @param vocabName the vocabulary class name (without the package).
+     */
+    public void setVocabName(String vocabName)
+    {
+        this.vocabName = vocabName;
+    }
+
+    /**
      * Gets the mapping of known data types to string names.
      * 
      * @return A map from type IRIs to string names.
      */
     protected abstract Map<IRI, String> getDataTypes();
 
+    /**
+     * Default type to be used when rdfs:range is not defined.
+     * 
+     * @return a type name on the target platform (e.g. String)
+     */
+    protected abstract String getDefaultType();
+    
+    /**
+     * Creates an object type name from an IRI
+     * @param iri the iri of the type
+     * @return the type name
+     */
+    protected abstract String getObjectType(IRI iri);
+    
+    /**
+     * Creates a name of array of simple values of the given type.
+     * @param type the type
+     * @return the array name (e.g. int[])
+     */
+    protected abstract String getArrayType(String type);
+    
+    /**
+     * Creates a name of array of objects values of the given type.
+     * @param type the type
+     * @return the collection name (e.g. Set&lt;Object&gt;)
+     */
+    protected abstract String getCollectionType(String type);
+    
     //=======================================================================================================
     
     /**
@@ -223,23 +270,28 @@ public abstract class ClassBuilder
         return English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
     }
     
+    /**
+     * Creates a target platform name of the type identified by the IRI.
+     * @param iri
+     * @return
+     */
     protected String getPropertyDataType(IRI iri)
     {
         IRI range = getOptionalObjectIRI(getModel(), iri, RDFS.RANGE);
-        String type = "String";
+        String type = getDefaultType();
         if (range != null)
         {
             if (getDataTypes().containsKey(range)) //known data types
             {
                 type = getDataTypes().get(range);
                 if (!isFunctionalProperty(iri))
-                    type = type + "[]";
+                    type = getArrayType(type);
             }
             else if (range.getNamespace().equals(iri.getNamespace())) //local data types -- object properties
             {
-                type = getClassName(range);
+                type = getObjectType(range);
                 if (!isFunctionalProperty(iri))
-                    type = "Set<" + type + ">";
+                    type = getCollectionType(type);
             }
         }
         return type;

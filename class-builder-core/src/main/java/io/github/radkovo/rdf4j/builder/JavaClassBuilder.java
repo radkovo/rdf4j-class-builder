@@ -64,7 +64,6 @@ public class JavaClassBuilder extends ClassBuilder
     //generation parametres
     private String packageName = null;
     private String vocabPackageName = null;
-    private String vocabName = null;
     
     
     public JavaClassBuilder(String filename, String format) throws IOException, RDFParseException
@@ -81,6 +80,30 @@ public class JavaClassBuilder extends ClassBuilder
     protected Map<IRI, String> getDataTypes()
     {
         return javaDataTypes;
+    }
+
+    @Override
+    protected String getDefaultType()
+    {
+        return "String";
+    }
+
+    @Override
+    protected String getObjectType(IRI iri)
+    {
+        return getClassName(iri);
+    }
+
+    @Override
+    protected String getArrayType(String type)
+    {
+        return type + "[]";
+    }
+
+    @Override
+    protected String getCollectionType(String type)
+    {
+        return "Set<" + type + ">";
     }
 
     /**
@@ -117,24 +140,6 @@ public class JavaClassBuilder extends ClassBuilder
     public void setVocabPackageName(String vocabPackageName)
     {
         this.vocabPackageName = vocabPackageName;
-    }
-
-    /**
-     * Gets the name of the generated vocabulary class.
-     * @return The vocabulary class name (without the package).
-     */
-    public String getVocabName()
-    {
-        return vocabName;
-    }
-
-    /**
-     * Sets the name of the generated vocabulary class.
-     * @param vocabName the vocabulary class name (without the package).
-     */
-    public void setVocabName(String vocabName)
-    {
-        this.vocabName = vocabName;
     }
 
     //=======================================================================================================
@@ -293,12 +298,10 @@ public class JavaClassBuilder extends ClassBuilder
         generateJavadoc(iri, out, 0);
 
         //super class
-        boolean derived = false;
         String superClass = DEFAULT_SUPERCLASS;
         IRI superClassIRI = getOptionalObjectIRI(getModel(), iri, RDFS.SUBCLASSOF);
         if (superClassIRI != null)
         {
-            derived = true;
             superClass = getClassName(superClassIRI);
         }
         //class definition

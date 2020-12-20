@@ -3,7 +3,7 @@
  *
  * Created on 17. 10. 2019, 20:26:28 by burgetr
  */
-package io.github.radkovo.rdf4j.builder;
+package io.github.radkovo.rdf4j.builder.cli;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -20,7 +20,7 @@ import org.apache.commons.cli.PosixParser;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.Rio;
 
-import io.github.radkovo.rdf4j.builder.ClassBuilder;
+import io.github.radkovo.rdf4j.builder.JavaClassBuilder;
 import io.github.radkovo.rdf4j.vocab.GenerationException;
 import io.github.radkovo.rdf4j.vocab.VocabBuilder;
 
@@ -96,7 +96,7 @@ public class Main
         vb.generate(Paths.get(vocabDir, vocabName + ".java"));
         
         //build classes
-        ClassBuilder cb = new ClassBuilder(filename, format);
+        JavaClassBuilder cb = new JavaClassBuilder(filename, format);
         cb.setPackageName(classPackage);
         cb.setVocabPackageName(vocabPackage);
         cb.setVocabName(vocabName);
