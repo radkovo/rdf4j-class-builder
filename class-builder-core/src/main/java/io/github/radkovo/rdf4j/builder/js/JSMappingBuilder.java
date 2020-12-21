@@ -129,12 +129,31 @@ public class JSMappingBuilder extends ClassBuilder
             generateMapper((IRI) cres, out);
         }
         
+        //creator registry
+        generateRegistry(classes, out);
+        
         out.close();
     }
 
+    private void generateRegistry(List<IRI> classes, PrintWriter out)
+    {
+        out.println("export const registry = {");
+        
+        boolean first = true;
+        for (IRI cres : classes) {
+            if (!first)
+                out.println(',');
+            out.printf(getIndent(1) + "'%s': new %sCreator()", cres.toString(), getClassName(cres));
+            first = false;
+        }
+        out.println();
+        out.println("};");
+        out.println();
+    }
+    
     private void generateMapper(IRI iri, PrintWriter out)
     {
-        final String className= getClassName(iri);
+        final String className = getClassName(iri);
         Set<IRI> properties = findClassProperties(iri);
         log.debug("   properties: {}", properties);
         
@@ -146,13 +165,14 @@ public class JSMappingBuilder extends ClassBuilder
             superClass = getClassName(superClassIRI);
         }
         //class definition
-        out.printf("export class %sCreator extends %sCreator {\n", className, superClass);
+        out.printf("class %sCreator extends %sCreator {\n", className, superClass);
         
         //constructor with external mappings
-        out.printf(getIndent(1) + "constructor(mapping = {}) {\n");
+        out.printf(getIndent(1) + "constructor() {\n");
+        out.printf(getIndent(2) + "super();\n");
         
         //own mappings
-        out.printf(getIndent(2) + "super({\n");
+        out.printf(getIndent(2) + "this.addMapping({\n");
         for (IRI piri : properties)
         {
             /*if (!isObjectOrCollectionProperty(piri))
@@ -161,7 +181,6 @@ public class JSMappingBuilder extends ClassBuilder
             }*/
             generatePropertyMapping(piri, getPropertyName(piri), out);
         }
-        out.println(getIndent(3) + "...mapping");
         out.printf(getIndent(2) + "});\n");
         //end constructor
         out.printf(getIndent(1) + "}\n");
@@ -181,9 +200,13 @@ public class JSMappingBuilder extends ClassBuilder
         for (Resource cres : classes)
         {
             if (cres instanceof IRI)
+            {
                 ret.add((IRI) cres);
+            }
             else
+            {
                 log.warn("Skipping resource {} -- not an IRI", cres);
+            }
         }
         Collections.sort(ret, new SuperclassComparator()); //move superclasses first
         return ret;

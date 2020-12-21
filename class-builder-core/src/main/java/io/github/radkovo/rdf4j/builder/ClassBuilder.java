@@ -217,7 +217,7 @@ public abstract class ClassBuilder
     public abstract void generate(Path outputDir) throws IOException;
     
     //=======================================================================================================
-    
+
     protected Set<Resource> findClasses()
     {
         final Set<Resource> classes = new HashSet<>();
