@@ -66,6 +66,11 @@ public class JavaClassBuilder extends ClassBuilder
     private String vocabPackageName = null;
     
     
+    public JavaClassBuilder()
+    {
+        super();
+    }
+
     public JavaClassBuilder(String filename, String format) throws IOException, RDFParseException
     {
         super(filename, format);

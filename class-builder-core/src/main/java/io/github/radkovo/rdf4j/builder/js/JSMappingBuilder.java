@@ -60,6 +60,12 @@ public class JSMappingBuilder extends ClassBuilder
         jsDataTypes.put(XMLSchema.ANYURI, "string");
     }
     
+    
+    public JSMappingBuilder()
+    {
+        super();
+    }
+
     public JSMappingBuilder(String filename, String format) throws IOException, RDFParseException
     {
         super(filename, format);

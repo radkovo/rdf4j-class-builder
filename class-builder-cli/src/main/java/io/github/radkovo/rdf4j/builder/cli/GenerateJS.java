@@ -27,12 +27,10 @@ public class GenerateJS
         RDFFormat format = null;
         try
         {
-            JSMappingBuilder gen = new JSMappingBuilder("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/render.owl", format);
+            JSMappingBuilder gen = new JSMappingBuilder();
+            gen.load("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/render.owl", format);
+            gen.load("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/segmentation.owl", format);
             gen.setVocabName("box");
-            gen.generate("/home/burgetr/git/fitlayout/PageView/src/common/");
-            
-            gen = new JSMappingBuilder("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/segmentation.owl", format);
-            gen.setVocabName("segm");
             gen.generate("/home/burgetr/git/fitlayout/PageView/src/common/");
             
         } catch (RDFParseException | IOException e) {

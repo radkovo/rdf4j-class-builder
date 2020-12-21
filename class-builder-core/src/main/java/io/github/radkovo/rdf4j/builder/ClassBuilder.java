@@ -61,7 +61,14 @@ public abstract class ClassBuilder
     private String vocabName = null;
 
     //ontology data
-    private final Model model;
+    private Model model;
+    
+    /**
+     * Creates and empty class builder. The models may be loaded using {@link ClassBuilder#load(String, RDFFormat)}.
+     */
+    public ClassBuilder()
+    {
+    }
     
     /**
      * Creates a new class builder for the specified input file.
@@ -73,7 +80,7 @@ public abstract class ClassBuilder
      */
     public ClassBuilder(String filename, String format) throws IOException, RDFParseException
     {
-        this(filename, format != null ? Rio.getParserFormatForMIMEType(format).orElse(null) : null);
+        load(filename, format);
     }
     
     /**
@@ -86,6 +93,32 @@ public abstract class ClassBuilder
      */
     public ClassBuilder(String filename, RDFFormat format) throws IOException, RDFParseException
     {
+        load(filename, format);
+    }
+    
+    /**
+     * Loads an input model from the specified input file.
+     * 
+     * @param filename input file specification
+     * @param format input file MIME type (such as application/rdf+xml) or {@code null} for automatic detection.
+     * @throws IOException
+     * @throws RDFParseException
+     */
+    public void load(String filename, String format) throws IOException, RDFParseException
+    {
+        load(filename, format != null ? Rio.getParserFormatForMIMEType(format).orElse(null) : null);
+    }
+    
+    /**
+     * Loads an input model from the specified input file.
+     * 
+     * @param filename input file specification
+     * @param format input file format (see the {@link RDFFormat} constants) or {@code null} for automatic detection.
+     * @throws IOException
+     * @throws RDFParseException
+     */
+    public void load(String filename, RDFFormat format) throws IOException, RDFParseException
+    {
         Path file = Paths.get(filename);
         if (!Files.exists(file)) throw new FileNotFoundException(filename);
 
@@ -96,7 +129,11 @@ public abstract class ClassBuilder
 
         try (final InputStream inputStream = Files.newInputStream(file)) {
             log.trace("Loading input file");
-            model = Rio.parse(inputStream, "", format);
+            Model newmodel = Rio.parse(inputStream, "", format);
+            if (model == null)
+                model = newmodel;
+            else
+                model.addAll(newmodel);
         }
     }
 
