@@ -50,17 +50,8 @@ public class Main
             }
 
             String[] cliArgs = cli.getArgs();
-            final String filename;
-            switch (cliArgs.length) 
-            {
-                case 0:
-                    throw new ParseException("Missing input file");
-                case 1:
-                    filename = cliArgs[0];
-                    break;
-                default:
-                    throw new ParseException("too many arguments");
-            }
+            if (cliArgs.length == 0)
+                throw new ParseException("Missing input file(s)");
             
             final String cwd = System.getProperty("user.dir");
             
@@ -71,7 +62,7 @@ public class Main
             String classDir = cli.hasOption('O') ? cli.getOptionValue('O') : vocabDir;
             String classPackage = cli.hasOption('P') ? cli.getOptionValue('P') : vocabPackage;
             
-            generateFromOWL(filename, format, vocabName, vocabDir, vocabPackage, classDir, classPackage);
+            generateFromOWL(cliArgs, format, vocabName, vocabDir, vocabPackage, classDir, classPackage);
             
         } catch (MissingOptionException e) {
             printHelp("Missing option: " + e.getMessage());
@@ -85,18 +76,23 @@ public class Main
 
     }
 
-    private static void generateFromOWL(String filename, RDFFormat format,
+    private static void generateFromOWL(String[] filenames, RDFFormat format,
             String vocabName, String vocabDir, String vocabPackage,
             String classDir, String classPackage)
             throws IOException, GenerationException
     {
-        //build vocabulary
-        VocabBuilder vb = new VocabBuilder(filename, format);
-        vb.setPackageName(vocabPackage);
-        vb.generate(Paths.get(vocabDir, vocabName + ".java"));
+        //build vocabularies
+        for (String filename : filenames)
+        {
+            VocabBuilder vb = new VocabBuilder(filename, format);
+            vb.setPackageName(vocabPackage);
+            vb.generate(Paths.get(vocabDir, vocabName + ".java"));
+        }
         
         //build classes
-        JavaClassBuilder cb = new JavaClassBuilder(filename, format);
+        JavaClassBuilder cb = new JavaClassBuilder();
+        for (String filename : filenames)
+            cb.load(filename, format);
         cb.setPackageName(classPackage);
         cb.setVocabPackageName(vocabPackage);
         cb.setVocabName(vocabName);

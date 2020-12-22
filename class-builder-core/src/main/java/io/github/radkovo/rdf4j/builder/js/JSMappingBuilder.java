@@ -127,6 +127,7 @@ public class JSMappingBuilder extends ClassBuilder
         //imports
         out.println();
         out.println("import ObjectCreator from './objectcreator.js';");
+        out.println("import RDFModel from './rdfmodel.js';");
         out.println();
         
         //generate mappers
@@ -137,13 +138,22 @@ public class JSMappingBuilder extends ClassBuilder
         
         //creator registry
         generateRegistry(classes, out);
+        generateModel(out);
         
         out.close();
     }
 
+    private void generateModel(PrintWriter out)
+    {
+        out.printf("export default class Model extends RDFModel {\n");
+        out.printf(getIndent(1) + "constructor() { super(registry); }\n");
+        out.println("}");
+        out.println();
+    }
+    
     private void generateRegistry(List<IRI> classes, PrintWriter out)
     {
-        out.println("export const registry = {");
+        out.println("const registry = {");
         
         boolean first = true;
         for (IRI cres : classes) {
