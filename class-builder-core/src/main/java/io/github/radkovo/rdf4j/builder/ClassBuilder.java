@@ -303,7 +303,7 @@ public abstract class ClassBuilder
     
     protected String getReversePropertyName(IRI iri)
     {
-        final String propertyType = getPropertySourceType(iri);
+        final String propertyType = getPropertySourceClass(iri);
         return English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
     }
     
@@ -335,6 +335,12 @@ public abstract class ClassBuilder
     }
 
     protected String getPropertySourceType(IRI iri)
+    {
+        IRI domain = getOptionalObjectIRI(getModel(), iri, RDFS.DOMAIN);
+        return domain == null ? null : getObjectType(domain);
+    }
+
+    protected String getPropertySourceClass(IRI iri)
     {
         IRI domain = getOptionalObjectIRI(getModel(), iri, RDFS.DOMAIN);
         return domain == null ? null : getClassName(domain);

@@ -32,6 +32,7 @@ public class GenerateJS
             gen.load("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/segmentation.owl", format);
             gen.setVocabName("box");
             gen.generate("/home/burgetr/git/fitlayout/PageView/src/common/");
+            //gen.generate("/tmp/genjs");
             
         } catch (RDFParseException | IOException e) {
             e.printStackTrace();

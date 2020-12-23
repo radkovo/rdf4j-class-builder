@@ -145,7 +145,7 @@ public class JSMappingBuilder extends ClassBuilder
 
     private void generateModel(PrintWriter out)
     {
-        out.printf("export default class Model extends RDFModel {\n");
+        out.printf("export class Model extends RDFModel {\n");
         out.printf(getIndent(1) + "constructor() { super(registry); }\n");
         out.println("}");
         out.println();
@@ -171,7 +171,7 @@ public class JSMappingBuilder extends ClassBuilder
     {
         final String className = getClassName(iri);
         Set<IRI> properties = findClassProperties(iri);
-        log.debug("   properties: {}", properties);
+        Set<IRI> revProperties = findClassProperties(iri, RDFS.RANGE); //reverse properties
         
         //super class
         String superClass = DEFAULT_SUPERCLASS;
@@ -197,7 +197,18 @@ public class JSMappingBuilder extends ClassBuilder
             }*/
             generatePropertyMapping(piri, getPropertyName(piri), out);
         }
+        //reverse properties
+        for (IRI piri : revProperties)
+        {
+            //log.debug("CLASS {} : {}", piri, getPropertyClassification(piri));
+            //inverse functional properties are ignored for now, we map collections only
+            if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
+            {
+                generateReverseCollectionMapping(piri, getPropertyName(piri), out);
+            }
+        }
         out.printf(getIndent(2) + "});\n");
+        
         //end constructor
         out.printf(getIndent(1) + "}\n");
         
@@ -210,6 +221,14 @@ public class JSMappingBuilder extends ClassBuilder
         out.printf(getIndent(3) + "%s: { name: '%s', type: '%s' },\n", propertyName, iri.toString(), type);
     }
     
+    protected void generateReverseCollectionMapping(IRI iri, String propertyName, PrintWriter out)
+    {
+        final String propertyType = getCollectionType(getPropertySourceType(iri));
+        final String varName = getReversePropertyName(iri);
+        out.printf(getIndent(3) + "// Inverse collection for %s.%s.\n", getPropertySourceClass(iri), propertyName);
+        out.printf(getIndent(3) + "%s: { name: '%s', type: '%s', inverse: true },\n", varName, iri.toString(), propertyType);
+    }
+
     private List<IRI> sortClasses(Set<Resource> classes)
     {
         List<IRI> ret = new ArrayList<>();
