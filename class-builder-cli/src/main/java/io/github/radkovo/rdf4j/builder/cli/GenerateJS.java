@@ -28,6 +28,7 @@ public class GenerateJS
         try
         {
             JSMappingBuilder gen = new JSMappingBuilder();
+            gen.load("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/fitlayout.owl", format);
             gen.load("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/render.owl", format);
             gen.load("/home/burgetr/git/fitlayout/FitLayout.github.io/ontology/segmentation.owl", format);
             gen.setVocabName("box");
