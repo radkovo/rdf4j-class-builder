@@ -11,18 +11,22 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.atteo.evo.inflector.English;
+import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.util.RDFCollections;
 import org.eclipse.rdf4j.model.vocabulary.DC;
 import org.eclipse.rdf4j.model.vocabulary.DCTERMS;
 import org.eclipse.rdf4j.model.vocabulary.OWL;
@@ -286,10 +290,68 @@ public abstract class ClassBuilder
             {
                 if (st.getSubject() instanceof IRI)
                 {
-                    IRI firi = (IRI) st.getSubject();
-                    Set<Value> domains = getModel().filter(firi, predicate, null).objects();
+                    IRI propertyIri = (IRI) st.getSubject();
+                    Set<Value> domains = getReferencedTypes(propertyIri, predicate);
                     if (domains.contains(classIRI))
-                        ret.add(firi);
+                        ret.add(propertyIri);
+                }
+            }
+        }
+        return ret;
+    }
+    
+    /**
+     * Finds all domain or range types referenced by a property specification.
+     * TODO multiple domains or ranges should be treated as intersection but we have no way how
+     * to treat this in Java.
+     * @param propertyIri the property (owl:Property) IRI
+     * @param predicate rdfs:domain or rdfs:range
+     * @return a set of referenced types
+     */
+    protected Set<Value> getReferencedTypes(IRI propertyIri, IRI predicate)
+    {
+        int cnt = 0; 
+        Set<Value> ret = new HashSet<>();
+        for (Statement st : getModel().filter(propertyIri, predicate, null))
+        {
+            if (st.getObject() instanceof IRI) //IRIs of objects referenced directly
+            {
+                ret.add(st.getObject());
+            }
+            else if (st.getObject() instanceof BNode) //a blank node - check for a referenced union
+            {
+                //TODO many more other cases may occur here probably. We just assume an anonymous class defined by union of normal classes.
+                Set<IRI> types = getUnionTypes((Resource) st.getObject());
+                ret.addAll(types);
+            }
+            cnt++;
+        }
+        if (cnt > 1) {
+            log.warn("Multiple specifications of {} for property {}. This may not work as expected since we can't"
+                     + " handle intersections properly in the class builder.", predicate, propertyIri);
+        }
+        return ret;
+    }
+    
+    /**
+     * Gets the types of a class defined by a union.
+     * @param subj the URI of a class defined by union
+     * @return the types the union refers too.
+     */
+    protected Set<IRI> getUnionTypes(Resource subj)
+    {
+        Set<IRI> ret = new HashSet<>();
+        for (Statement st : getModel().filter(subj, OWL.UNIONOF, null))
+        {
+            if (st.getObject() instanceof Resource)
+            {
+                //try to treat the union a RDF collection
+                List<Value> vals = new ArrayList<>();
+                RDFCollections.asValues(getModel(), (Resource) st.getObject(), vals);
+                for (Value val : vals)
+                {
+                    if (val instanceof IRI)
+                        ret.add((IRI) val);
                 }
             }
         }
@@ -304,7 +366,10 @@ public abstract class ClassBuilder
     protected String getReversePropertyName(IRI iri)
     {
         final String propertyType = getPropertySourceClass(iri);
-        return English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
+        if (propertyType != null)
+            return English.plural(propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1));
+        else
+            return null;
     }
     
     /**

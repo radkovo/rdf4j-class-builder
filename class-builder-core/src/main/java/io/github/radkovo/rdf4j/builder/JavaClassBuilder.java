@@ -377,10 +377,17 @@ public class JavaClassBuilder extends ClassBuilder
 
     protected void generateReverseCollectionDeclaration(IRI iri, String propertyName, String propertyType, PrintWriter out)
     {
-        out.printf(getIndent(1) + "/** Inverse collection for %s.%s. */\n", propertyType, propertyName);
         String varName = getReversePropertyName(iri);
-        out.printf(getIndent(1) + "private Set<%s> %s;\n", propertyType, varName);
-        out.println();
+        if (varName != null)
+        {
+            out.printf(getIndent(1) + "/** Inverse collection for %s.%s. */\n", propertyType, propertyName);
+            out.printf(getIndent(1) + "private Set<%s> %s;\n", propertyType, varName);
+            out.println();
+        }
+        else
+        {
+            log.warn("Skipped inverse collection for {} -- couldn't determine its source class", iri);
+        }
     }
     
     protected void generatePropertyGetter(IRI iri, String propertyName, PrintWriter out)
@@ -403,31 +410,34 @@ public class JavaClassBuilder extends ClassBuilder
 
     protected void generateRevPropertyGetterAdder(IRI iri, String propertyName, String propertyType, PrintWriter out)
     {
-        String adderName = "add" + propertyType;
-        String paramName = propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1);
         String varName = getReversePropertyName(iri);
-        String getterName = "get" + English.plural(propertyType);
-        
-        out.printf(getIndent(1) + "public Set<%s> %s() {\n", propertyType, getterName);
-        //out.printf(getIndent(2) + "return (%s == null) ? new HashSet<>() : %s;\n", varName, varName);
-        out.printf(getIndent(2) + "return %s;\n", varName);
-        out.println(getIndent(1) + "}");
-        out.println();
-        
-        out.printf(getIndent(1) + "public void %s(%s %s) {\n", adderName, propertyType, paramName);
-        out.printf(getIndent(2) + "if (%s == null) %s = new HashSet<>();\n", varName, varName);
-        out.printf(getIndent(2) + "%s.add(%s);\n", varName, paramName);
-        if (getPropertyClassification(iri).equals("Object"))
+        if (varName != null)
         {
-            String otherSetter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-            out.printf(getIndent(2) + "%s.%s(this);\n", paramName, otherSetter);
+            String adderName = "add" + propertyType;
+            String paramName = propertyType.substring(0, 1).toLowerCase() + propertyType.substring(1);
+            String getterName = "get" + English.plural(propertyType);
+            
+            out.printf(getIndent(1) + "public Set<%s> %s() {\n", propertyType, getterName);
+            //out.printf(getIndent(2) + "return (%s == null) ? new HashSet<>() : %s;\n", varName, varName);
+            out.printf(getIndent(2) + "return %s;\n", varName);
+            out.println(getIndent(1) + "}");
+            out.println();
+            
+            out.printf(getIndent(1) + "public void %s(%s %s) {\n", adderName, propertyType, paramName);
+            out.printf(getIndent(2) + "if (%s == null) %s = new HashSet<>();\n", varName, varName);
+            out.printf(getIndent(2) + "%s.add(%s);\n", varName, paramName);
+            if (getPropertyClassification(iri).equals("Object"))
+            {
+                String otherSetter = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+                out.printf(getIndent(2) + "%s.%s(this);\n", paramName, otherSetter);
+            }
+            else
+            {
+                String other = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+                out.printf(getIndent(2) + "%s.%s().add(this);\n", paramName, other);
+            }
+            out.println(getIndent(1) + "}");
         }
-        else
-        {
-            String other = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-            out.printf(getIndent(2) + "%s.%s().add(this);\n", paramName, other);
-        }
-        out.println(getIndent(1) + "}");
     }
 
     protected void generateConstructors(String className, Set<IRI> properties, Set<IRI> revProperties, PrintWriter out)
@@ -450,7 +460,8 @@ public class JavaClassBuilder extends ClassBuilder
             if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 String propertyName = getReversePropertyName(piri);
-                out.printf(getIndent(2) + "%s = new HashSet<>();\n", propertyName);
+                if (propertyName != null)
+                    out.printf(getIndent(2) + "%s = new HashSet<>();\n", propertyName);
             }
         }
         
@@ -488,7 +499,8 @@ public class JavaClassBuilder extends ClassBuilder
             if (isObjectOrCollectionProperty(piri) && !isInverseFunctionalProperty(piri))
             {
                 String varName = getReversePropertyName(piri);
-                out.printf(getIndent(2) + "target.addAll(%s);\n", varName);
+                if (varName != null)
+                    out.printf(getIndent(2) + "target.addAll(%s);\n", varName);
             }
         }
         

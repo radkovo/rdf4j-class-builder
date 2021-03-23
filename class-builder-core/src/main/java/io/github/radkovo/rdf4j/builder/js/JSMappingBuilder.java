@@ -225,8 +225,15 @@ public class JSMappingBuilder extends ClassBuilder
     {
         final String propertyType = getCollectionType(getPropertySourceType(iri));
         final String varName = getReversePropertyName(iri);
-        out.printf(getIndent(3) + "// Inverse collection for %s.%s.\n", getPropertySourceClass(iri), propertyName);
-        out.printf(getIndent(3) + "%s: { name: '%s', type: '%s', inverse: true },\n", varName, iri.toString(), propertyType);
+        if (varName != null)
+        {
+            out.printf(getIndent(3) + "// Inverse collection for %s.%s.\n", getPropertySourceClass(iri), propertyName);
+            out.printf(getIndent(3) + "%s: { name: '%s', type: '%s', inverse: true },\n", varName, iri.toString(), propertyType);
+        }
+        else
+        {
+            log.warn("Skipped inverse collection for {} -- couldn't determine its source class", iri);
+        }
     }
 
     private List<IRI> sortClasses(Set<Resource> classes)
