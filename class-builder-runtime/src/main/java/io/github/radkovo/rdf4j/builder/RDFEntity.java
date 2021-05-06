@@ -56,6 +56,32 @@ abstract public class RDFEntity
     }
     
     //=====================================================================================
+    
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((iri == null) ? 0 : iri.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        RDFEntity other = (RDFEntity) obj;
+        if (iri == null)
+        {
+            if (other.iri != null) return false;
+        }
+        else if (!iri.equals(other.iri)) return false;
+        return true;
+    }
+    
+    //=====================================================================================
 
     /**
      * Creates a set of RDF triples describing the entity and stores the triples to a target model.
