@@ -61,8 +61,9 @@ public class Main
             String vocabPackage = cli.hasOption('p') ? cli.getOptionValue('p') : "";
             String classDir = cli.hasOption('O') ? cli.getOptionValue('O') : vocabDir;
             String classPackage = cli.hasOption('P') ? cli.getOptionValue('P') : vocabPackage;
+            String includePrefix = cli.hasOption('I') ? cli.getOptionValue('I') : "";
             
-            generateFromOWL(cliArgs, format, vocabName, vocabDir, vocabPackage, classDir, classPackage);
+            generateFromOWL(cliArgs, format, vocabName, vocabDir, vocabPackage, classDir, classPackage, includePrefix);
             
         } catch (MissingOptionException e) {
             printHelp("Missing option: " + e.getMessage());
@@ -78,7 +79,7 @@ public class Main
 
     private static void generateFromOWL(String[] filenames, RDFFormat format,
             String vocabName, String vocabDir, String vocabPackage,
-            String classDir, String classPackage)
+            String classDir, String classPackage, String includePrefix)
             throws IOException, GenerationException
     {
         //build vocabularies
@@ -96,6 +97,7 @@ public class Main
         cb.setPackageName(classPackage);
         cb.setVocabPackageName(vocabPackage);
         cb.setVocabName(vocabName);
+        cb.setIncludePrefix(includePrefix);
         cb.generate(classDir);
     }
 
@@ -171,6 +173,14 @@ public class Main
                 .withArgName("path")
                 .isRequired(false)
                 .create('O'));
+
+        o.addOption(OptionBuilder
+                .withLongOpt("include-prefix")
+                .withDescription("class IRI prefix to include (classes with other prefixes will be excluded)")
+                .hasArgs(1)
+                .withArgName("path")
+                .isRequired(false)
+                .create('I'));
 
         o.addOption(OptionBuilder
                 .withLongOpt("help")

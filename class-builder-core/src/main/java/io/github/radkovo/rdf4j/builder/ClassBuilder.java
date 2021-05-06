@@ -63,6 +63,7 @@ public abstract class ClassBuilder
     private String indent = "\t";
     private String language = null;
     private String vocabName = null;
+    private String includePrefix = "";
 
     //ontology data
     private Model model;
@@ -201,6 +202,24 @@ public abstract class ClassBuilder
     }
 
     /**
+     * Gets the IRI prefix of classes to include.
+     * @return The IRI prefix or an empty string when all classes should be included.
+     */
+    public String getIncludePrefix()
+    {
+        return includePrefix;
+    }
+
+    /**
+     * Sets the IRI prefix of classes to include.
+     * @param includePrefix The IRI prefix or an empty string when all classes should be included.
+     */
+    public void setIncludePrefix(String includePrefix)
+    {
+        this.includePrefix = includePrefix;
+    }
+
+    /**
      * Gets the mapping of known data types to string names.
      * 
      * @return A map from type IRIs to string names.
@@ -266,7 +285,13 @@ public abstract class ClassBuilder
         for (Statement st : types)
         {
             if (classPredicates.contains(st.getObject()))
-                classes.add(st.getSubject());
+            {
+                if (includePrefix.isEmpty() || st.getSubject().toString().startsWith(includePrefix))
+                {
+                    System.out.println("Add " + st.getSubject());
+                    classes.add(st.getSubject());
+                }
+            }
         }
         return classes;
     }
