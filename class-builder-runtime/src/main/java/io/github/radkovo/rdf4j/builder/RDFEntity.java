@@ -125,80 +125,80 @@ abstract public class RDFEntity
     
     //=====================================================================================
     
-    protected void addValue(TargetModel target, IRI propertyIRI, String value)
+    public void addValue(TargetModel target, IRI propertyIRI, String value)
     {
         if (value != null)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(TargetModel target, IRI propertyIRI, int value)
+    public void addValue(TargetModel target, IRI propertyIRI, int value)
     {
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(TargetModel target, IRI propertyIRI, float value)
+    public void addValue(TargetModel target, IRI propertyIRI, float value)
     {
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(TargetModel target, IRI propertyIRI, double value)
+    public void addValue(TargetModel target, IRI propertyIRI, double value)
     {
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(TargetModel target, IRI propertyIRI, Date value)
+    public void addValue(TargetModel target, IRI propertyIRI, Date value)
     {
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addValue(TargetModel target, IRI propertyIRI, URL value)
+    public void addValue(TargetModel target, IRI propertyIRI, URL value)
     {
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value.toString()));
     }
 
-    protected void addArray(TargetModel target, IRI propertyIRI, String[] values)
+    public void addArray(TargetModel target, IRI propertyIRI, String[] values)
     {
         for (String value : values)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(TargetModel target, IRI propertyIRI, int[] values)
+    public void addArray(TargetModel target, IRI propertyIRI, int[] values)
     {
         for (int value : values)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(TargetModel target, IRI propertyIRI, float[] values)
+    public void addArray(TargetModel target, IRI propertyIRI, float[] values)
     {
         for (float value : values)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(TargetModel target, IRI propertyIRI, double[] values)
+    public void addArray(TargetModel target, IRI propertyIRI, double[] values)
     {
         for (double value : values)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(TargetModel target, IRI propertyIRI, Date[] values)
+    public void addArray(TargetModel target, IRI propertyIRI, Date[] values)
     {
         for (Date value : values)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
-    protected void addArray(TargetModel target, IRI propertyIRI, URL[] values)
+    public void addArray(TargetModel target, IRI propertyIRI, URL[] values)
     {
         for (URL value : values)
             target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value.toString(), XMLSchema.ANYURI));
     }
 
-    protected void addObject(TargetModel target, IRI propertyIRI, RDFEntity obj)
+    public void addObject(TargetModel target, IRI propertyIRI, RDFEntity obj)
     {
         target.getModel().add(getIRI(), propertyIRI, obj.getIRI());
         target.add(obj);
     }
 
-    protected void addCollection(TargetModel target, IRI propertyIRI, Collection<? extends RDFEntity> col)
+    public void addCollection(TargetModel target, IRI propertyIRI, Collection<? extends RDFEntity> col)
     {
         for (RDFEntity entity : col)
         {
