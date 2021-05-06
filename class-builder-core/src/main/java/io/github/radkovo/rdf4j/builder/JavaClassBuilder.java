@@ -39,7 +39,7 @@ public class JavaClassBuilder extends ClassBuilder
 {
     private static final Logger log = LoggerFactory.getLogger(JavaClassBuilder.class);
 
-    private static final String DEFAULT_SUPERCLASS = "com.github.radkovo.rdf4j.builder.RDFEntity";
+    private static final String DEFAULT_SUPERCLASS = "io.github.radkovo.rdf4j.builder.RDFEntity";
     
     private static final Map<IRI, String> javaDataTypes;
     static {
@@ -207,7 +207,7 @@ public class JavaClassBuilder extends ClassBuilder
         
         //imports
         out.println("import org.eclipse.rdf4j.model.IRI;");
-        out.println("import com.github.radkovo.rdf4j.builder.EntityFactory;");
+        out.println("import io.github.radkovo.rdf4j.builder.EntityFactory;");
         out.println();
         
         //generate interface
@@ -294,8 +294,8 @@ public class JavaClassBuilder extends ClassBuilder
             out.println("import java.util.HashSet;");
         out.println("import org.eclipse.rdf4j.model.IRI;");
         out.println("import org.eclipse.rdf4j.model.Model;");
-        out.println("import com.github.radkovo.rdf4j.builder.EntityFactory;");
-        out.println("import com.github.radkovo.rdf4j.builder.TargetModel;");
+        out.println("import io.github.radkovo.rdf4j.builder.EntityFactory;");
+        out.println("import io.github.radkovo.rdf4j.builder.TargetModel;");
         if (getVocabPackageName() != null && getVocabName() != null)
             out.printf("import %s.%s;\n", getVocabPackageName(), getVocabName());
         out.println();
