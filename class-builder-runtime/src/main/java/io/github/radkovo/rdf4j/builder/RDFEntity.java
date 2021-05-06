@@ -146,6 +146,11 @@ abstract public class RDFEntity
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
     }
 
+    public void addValue(TargetModel target, IRI propertyIRI, boolean value)
+    {
+        target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
+    }
+
     public void addValue(TargetModel target, IRI propertyIRI, Date value)
     {
         target.getModel().add(getIRI(), propertyIRI, vf.createLiteral(value));
