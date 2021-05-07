@@ -114,8 +114,8 @@ public class Main
             hf.printWrapped(w, 80, error);
             w.println();
         }
-        hf.printWrapped(w, 80, 12, "Usage: ClassBuilder [options...] <input-file>");
-        hf.printWrapped(w, 80, 42, "  <input-file>                  the input file to read from");
+        hf.printWrapped(w, 80, 12, "Usage: ClassBuilder [options...] <input-file> [<input-file> ...]");
+        hf.printWrapped(w, 80, 42, "  <input-file>                  the input file to read from (multiple input files are allowed)");
         hf.printOptions(w, 80, getCliOpts(), 2, 2);
         w.flush();
         w.close();
