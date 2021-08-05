@@ -67,6 +67,7 @@ public abstract class ClassBuilder
 
     //ontology data
     private Model model;
+    private Set<String> localNamespaces;
     
     /**
      * Creates and empty class builder. The models may be loaded using {@link ClassBuilder#load(String, RDFFormat)}.
@@ -140,11 +141,30 @@ public abstract class ClassBuilder
             else
                 model.addAll(newmodel);
         }
+        
+        // find local namespaces
+        localNamespaces = new HashSet<>();
+        for (Resource iri : findClasses())
+        {
+            if (iri instanceof IRI)
+                localNamespaces.add(((IRI) iri).getNamespace());
+        }
+        log.debug("Local namespaces: {}", localNamespaces);
     }
 
     public Model getModel()
     {
         return model;
+    }
+
+    public Set<String> getLocalNamespaces()
+    {
+        return localNamespaces;
+    }
+    
+    public boolean isLocalNamespace(String ns)
+    {
+        return (localNamespaces != null) && localNamespaces.contains(ns);
     }
 
     /**
@@ -288,7 +308,7 @@ public abstract class ClassBuilder
             {
                 if (includePrefix.isEmpty() || st.getSubject().toString().startsWith(includePrefix))
                 {
-                    System.out.println("Add " + st.getSubject());
+                    //System.out.println("Add " + st.getSubject());
                     classes.add(st.getSubject());
                 }
             }
@@ -414,7 +434,7 @@ public abstract class ClassBuilder
                 if (!isFunctionalProperty(iri))
                     type = getArrayType(type);
             }
-            else if (range.getNamespace().equals(iri.getNamespace())) //local data types -- object properties
+            else if (isLocalNamespace(range.getNamespace())) //local data types -- object properties
             {
                 type = getObjectType(range);
                 if (!isFunctionalProperty(iri))
